@@ -62,3 +62,6 @@ htmlcov/
 Pipfile.lock
 poetry.lock
 yarn.lock
+
+# Firebase credentials
+serviceAccountKey.json

@@ -1,38 +1,18 @@
-
 import os
-import json
 import firebase_admin
 from firebase_admin import credentials, messaging
 from dotenv import load_dotenv
-import tempfile
 
-# Cargar las variables de entorno
+# Cargar las variables de entorno que pudieran ser usadas para otras cosas
 load_dotenv()
 
-# Crear un diccionario con las credenciales desde las variables de entorno
-"""firebase_credentials = {
-    "type": os.getenv("TYPE"),
-    "project_id": os.getenv("PROJECT_ID"),
-    "private_key_id": os.getenv("PRIVATE_KEY_ID"),
-    "private_key": os.getenv("PRIVATE_KEY").replace("\\n", "\n"),
-    "client_email": os.getenv("CLIENT_EMAIL"),
-    "client_id": os.getenv("CLIENT_ID"),
-    "auth_uri": os.getenv("AUTH_URI"),
-    "token_uri": os.getenv("TOKEN_URI"),
-    "auth_provider_x509_cert_url": os.getenv("AUTH_PROVIDER_X509_CERT_URL"),
-    "client_x509_cert_url": os.getenv("CLIENT_X509_CERT_URL"),
-    "universe_domain":os.getenv("googleapis.com")
-}
+# Ruta al archivo de credenciales
+service_account_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'serviceAccountKey.json')
 
-# Crear un archivo temporal con las credenciales
-with tempfile.NamedTemporaryFile(mode='w', delete=False) as temp_json_file:
-    json.dump(firebase_credentials, temp_json_file)
-    temp_json_file_name = temp_json_file.name
-
-# Inicializar Firebase con el archivo JSON temporal
-if not firebase_admin._apps:  # Evitar inicializar Firebase múltiples veces
-    cred = credentials.Certificate(temp_json_file_name)
-    firebase_admin.initialize_app(cred)"""
+# Inicializar Firebase con el archivo de credenciales
+if not firebase_admin._apps:
+    cred = credentials.Certificate(service_account_path)
+    firebase_admin.initialize_app(cred)
 
 def send_fcm_notification(fcm_token: str, title: str, body: str):
     """
