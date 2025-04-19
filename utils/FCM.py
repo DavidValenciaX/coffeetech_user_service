@@ -10,11 +10,11 @@ import tempfile
 load_dotenv()
 
 # Crear un diccionario con las credenciales desde las variables de entorno
-firebase_credentials = {
+"""firebase_credentials = {
     "type": os.getenv("TYPE"),
     "project_id": os.getenv("PROJECT_ID"),
     "private_key_id": os.getenv("PRIVATE_KEY_ID"),
-    "private_key": os.getenv("PRIVATE_KEY").replace("\\n", "\n"),  # Asegurarse de tener saltos de línea correctos
+    "private_key": os.getenv("PRIVATE_KEY").replace("\\n", "\n"),
     "client_email": os.getenv("CLIENT_EMAIL"),
     "client_id": os.getenv("CLIENT_ID"),
     "auth_uri": os.getenv("AUTH_URI"),
@@ -32,7 +32,7 @@ with tempfile.NamedTemporaryFile(mode='w', delete=False) as temp_json_file:
 # Inicializar Firebase con el archivo JSON temporal
 if not firebase_admin._apps:  # Evitar inicializar Firebase múltiples veces
     cred = credentials.Certificate(temp_json_file_name)
-    firebase_admin.initialize_app(cred)
+    firebase_admin.initialize_app(cred)"""
 
 def send_fcm_notification(fcm_token: str, title: str, body: str):
     """
