@@ -11,7 +11,7 @@ def reload_env():
     Carga las variables de entorno desde el archivo .env, 
     sobrescribiendo las existentes si es necesario.
     """
-    load_dotenv(override=True)
+    load_dotenv(override=True, encoding='utf-8')
 
 # Cargar variables de entorno
 reload_env()
@@ -27,9 +27,8 @@ DB_PASSWORD = os.getenv("PGPASSWORD")
 
 SQLALCHEMY_DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
-print (SQLALCHEMY_DATABASE_URL)
-engine = create_engine(SQLALCHEMY_DATABASE_URL)
-
+print(SQLALCHEMY_DATABASE_URL)
+engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={'client_encoding': 'utf8'})
 try:
     with engine.connect() as connection:
         result = connection.execute(text("SELECT 1"))
@@ -37,10 +36,7 @@ try:
 except Exception as e:
     print(f"Error al conectar a la base de datos: {e}")
     
-    
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-Base = declarative_base()
 
 def get_db_session():
     """
