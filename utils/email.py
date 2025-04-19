@@ -29,11 +29,14 @@ def send_email(email, token, email_type, farm_name=None, owner_name=None, sugges
         return
 
     smtp_host = "smtp.zoho.com"
-    smtp_port = 465  # Usar SSL en el puerto 465
+    smtp_port = 465
 
     # Obtener la URL del logo desde variables de entorno o usar una URL por defecto
-    logo_url = os.getenv("LOGO_URL", "https://raw.githubusercontent.com/naromu/CoffeeTech_Backend/develop/assets/logo.jpeg")
+    logo_url = os.getenv("LOGO_URL", "https://res.cloudinary.com/dh58mbonw/image/upload/v1745059649/u4iwdb6nsupnnsqwkvcn.jpg")
     
+    # Obtener la URL base de la aplicación desde variables de entorno
+    app_base_url = os.getenv("APP_BASE_URL", "http://127.0.0.1:8000") # Default to localhost if not set
+
     # Definir el asunto y el cuerpo del correo basado en el tipo de correo
     if email_type == 'verification':
         subject = "Verificación de Correo Electrónico"
@@ -254,8 +257,8 @@ def send_email(email, token, email_type, farm_name=None, owner_name=None, sugges
                     <p>Has sido invitado a unirte como <strong>{suggested_role}</strong> a la finca <strong>{farm_name}</strong> por <strong>{owner_name}</strong>.</p>
                     
                     <p>¡Te esperamos!</p>
-                    <a href="http://127.0.0.1:8000/invitation/accept-invitation/{token}" class="button">Aceptar Invitación</a>
-                    <a href="http://127.0.0.1:8000/invitation/reject-invitation/{token}" class="button reject">Rechazar Invitación</a>
+                    <a href="{app_base_url}/invitation/accept-invitation/{token}" class="button">Aceptar Invitación</a>
+                    <a href="{app_base_url}/invitation/reject-invitation/{token}" class="button reject">Rechazar Invitación</a>
                 </div>
                 <div class="footer">
                     <p>Gracias,<br/>El equipo de CoffeTech</p>
