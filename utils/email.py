@@ -21,8 +21,8 @@ def send_email(email, token, email_type, farm_name=None, owner_name=None, sugges
     :param owner_name: Nombre del dueño (opcional, solo para invitación).
     :param suggested_role: Rol sugerido para el invitado (opcional, solo para invitación).
     """
-    smtp_user = os.getenv("SMTPP_USER")
-    smtp_pass = os.getenv("SMTPP_PASS")
+    smtp_user = os.getenv("SMTP_USER")
+    smtp_pass = os.getenv("SMTP_PASS")
 
     if not smtp_user or not smtp_pass:
         print("Error: Las credenciales SMTP no están configuradas correctamente.")
