@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from endpoints import auth, utils, invitation, notification, collaborators
 from dataBase import engine
 from models.models import Base
@@ -11,6 +12,9 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+
+# Montar el directorio 'assets' en la ruta '/static'
+app.mount("/static", StaticFiles(directory="assets"), name="static")
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
