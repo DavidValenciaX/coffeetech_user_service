@@ -52,49 +52,49 @@ To run the service in the background as a systemd service:
 
 1. Create a systemd service file:
 
-```bash
-sudo nano /etc/systemd/system/coffeetech-user-service.service
-```
+    ```bash
+    sudo nano /etc/systemd/system/coffeetech-user-service.service
+    ```
 
 2. Add the following configuration:
 
-```ini
-[Unit]
-Description=CoffeeTech User Service
-After=network.target
+    ```ini
+    [Unit]
+    Description=CoffeeTech User Service
+    After=network.target
 
-[Service]
-Type=simple
-User=root
-Group=root
-WorkingDirectory=/home/projects/coffeetech_services/coffeetech_user_service/
-ExecStart=/root/.local/bin/uv --directory /home/projects/coffeetech_services/coffeetech_user_service/ run fastapi run
-StandardOutput=append:/var/log/coffeetech.out.log
-StandardError=append:/var/log/coffeetech.err.log
-Restart=always
-RestartSec=10
+    [Service]
+    Type=simple
+    User=root
+    Group=root
+    WorkingDirectory=/home/projects/coffeetech_services/coffeetech_user_service/
+    ExecStart=/root/.local/bin/uv --directory /home/projects/coffeetech_services/coffeetech_user_service/ run fastapi run
+    StandardOutput=append:/var/log/coffeetech.out.log
+    StandardError=append:/var/log/coffeetech.err.log
+    Restart=always
+    RestartSec=10
 
-[Install]
-WantedBy=multi-user.target
-```
+    [Install]
+    WantedBy=multi-user.target
+    ```
 
 3. Enable and start the service:
 
-```bash
-sudo systemctl daemon-reload
-sudo systemctl enable coffeetech-user-service
-sudo systemctl start coffeetech-user-service
-```
+    ```bash
+    sudo systemctl daemon-reload
+    sudo systemctl enable coffeetech-user-service
+    sudo systemctl start coffeetech-user-service
+    ```
 
 4. Check the service status:
 
-```bash
-sudo systemctl status coffeetech-user-service
-```
+    ```bash
+    sudo systemctl status coffeetech-user-service
+    ```
 
 5. View logs:
 
-```bash
-tail -f /var/log/coffeetech.out.log
-tail -f /var/log/coffeetech.err.log
-```
+    ```bash
+    tail -f /var/log/coffeetech.out.log
+    tail -f /var/log/coffeetech.err.log
+    ```
