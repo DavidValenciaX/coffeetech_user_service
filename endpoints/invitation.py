@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, EmailStr
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from models.models import UserRoleFarm, User, Role, Permission, RolePermission, Invitation
 from utils.security import verify_session_token
 from dataBase import get_db_session
@@ -31,11 +31,11 @@ class InvitationCreate(BaseModel):
 
     Attributes:
         email (EmailStr): Dirección de correo electrónico del usuario a invitar.
-        suggested_role (str): Rol sugerido para el usuario invitado.
+        suggested_role_id (int): ID del rol sugerido para el usuario invitado.
         farm_id (int): Identificador de la finca a la que se invita.
     """
     email: EmailStr
-    suggested_role: str  # El campo de role es una cadena
+    suggested_role_id: int
     farm_id: int
 
 # Función auxiliar para crear una respuesta uniforme
@@ -103,7 +103,7 @@ def create_invitation(invitation_data: InvitationCreate, session_token: str, db:
         return create_response("error", "No tienes acceso a esta finca", status_code=403)
 
     # Verificar si el rol sugerido para la invitación es válido
-    suggested_role = db.query(Role).filter(Role.name == invitation_data.suggested_role).first()
+    suggested_role = db.query(Role).filter(Role.role_id == invitation_data.suggested_role_id).first()
     if not suggested_role:
         return create_response("error", "El rol sugerido no es válido", status_code=400)
 
@@ -165,7 +165,7 @@ def create_invitation(invitation_data: InvitationCreate, session_token: str, db:
         # Crear la nueva invitación
         new_invitation = Invitation(
             email=invitation_data.email,
-            suggested_role=invitation_data.suggested_role,
+            suggested_role_id=invitation_data.suggested_role_id,
             farm_id=invitation_data.farm_id,
             inviter_user_id=user.user_id,  # Agregar el ID del usuario que está creando la invitación
             date=datetime.now(bogota_tz)  # Agregar la fecha actual
@@ -177,15 +177,16 @@ def create_invitation(invitation_data: InvitationCreate, session_token: str, db:
         # Crear la notificación asociada con notification_type_id
         pending_status = get_status(db, "Pendiente", "Notification")
         if not pending_status:
+            db.rollback() # Rollback if status not found
             return create_response("error", "El estado 'Pendiente' no fue encontrado para 'Notification'", status_code=400)
 
         invitation_notification_type = db.query(NotificationType).filter(NotificationType.name == "Invitation").first()
         if not invitation_notification_type:
+            db.rollback() # Rollback if type not found
             return create_response("error", "No se encontró el tipo de notificación 'Invitation'", status_code=400)
 
         new_notification = Notification(
-            # message=f"Has sido invitado como {invitation_data.suggested_role} a la finca {farm.name}",
-            message=f"Has sido invitado como {invitation_data.suggested_role} a la finca TODO: farm.name",
+            message=f"Has sido invitado como {suggested_role.name} a la finca TODO: farm.name",
             date=datetime.now(bogota_tz),
             user_id=existing_user.user_id,
             notification_type_id=invitation_notification_type.notification_type_id,  # Usar notification_type_id
@@ -195,13 +196,14 @@ def create_invitation(invitation_data: InvitationCreate, session_token: str, db:
         )
         db.add(new_notification)
         db.commit()
+        db.refresh(new_invitation)
+        db.refresh(new_notification)
 
     
         # Enviar notificación FCM al usuario
         if fcm_token := existing_user.fcm_token:
             title = "Nueva Invitación"
-            # body = f"Has sido invitado como {invitation_data.suggested_role} a la finca {farm.name}"
-            body = f"Has sido invitado como {invitation_data.suggested_role} a la finca TODO: farm.name"
+            body = f"Has sido invitado como {suggested_role.name} a la finca TODO: farm.name"
             send_fcm_notification(fcm_token, title, body)
         else:
             logger.warning("No se pudo enviar la notificación push. No se encontró el token FCM del usuario.")
@@ -233,7 +235,7 @@ def respond_invitation(invitation_id: int, action: str, session_token: str, db: 
         return session_token_invalid_response()
 
     # Buscar la invitación
-    invitation = db.query(Invitation).filter(Invitation.invitation_id == invitation_id).first()
+    invitation = db.query(Invitation).options(joinedload(Invitation.suggested_role)).filter(Invitation.invitation_id == invitation_id).first()
     if not invitation:
         return create_response("error", "Invitación no encontrada", status_code=404)
     
@@ -268,31 +270,27 @@ def respond_invitation(invitation_id: int, action: str, session_token: str, db: 
         # Usar la función get_status para obtener el estado "Activo" del tipo "User_Role_Farm"
         active_status = get_status(db, "Activo", "User_Role_Farm")
         if not active_status:
+            db.rollback()
             return create_response("error", "El estado 'Activo' no fue encontrado para 'User_Role_Farm'", status_code=400)
-
-        # Obtener el rol sugerido
-        suggested_role = db.query(Role).filter(Role.name == invitation.suggested_role).first()
-        if not suggested_role:
-            return create_response("error", "El rol sugerido no es válido", status_code=400)
 
         # Agregar al usuario a la finca en la tabla UserRoleFarm con el rol de la invitación
         new_user_role_farm = UserRoleFarm(
             user_id=user.user_id,
             farm_id=invitation.farm_id,
-            role_id=suggested_role.role_id,  # Asignar el rol sugerido
+            role_id=invitation.suggested_role_id,  # Asignar el rol sugerido
             status_id=active_status.status_id  # Estado "Activo" del tipo "User_Role_Farm"
         )
         db.add(new_user_role_farm)
-        db.commit()
 
         # Crear la notificación para el usuario que hizo la invitación (inviter_user_id)
         inviter = db.query(User).filter(User.user_id == invitation.inviter_user_id).first()
         if inviter:
             accepted_notification_type = db.query(NotificationType).filter(NotificationType.name == "Invitation_accepted").first()
             if not accepted_notification_type:
+                db.rollback()
                 return create_response("error", "No se encontró el tipo de notificación 'Invitation_accepted'", status_code=400)
 
-            notification_message = f"El usuario {user.name} ha aceptado tu invitación a la finca {invitation.farm.name}."
+            notification_message = f"El usuario {user.name} ha aceptado tu invitación como {invitation.suggested_role.name} a la finca TODO: farm.name."
             new_notification = Notification(
                 message=notification_message,
                 date=datetime.now(bogota_tz),
@@ -303,27 +301,31 @@ def respond_invitation(invitation_id: int, action: str, session_token: str, db: 
                 status_id=responded_status.status_id  # Estado "Respondida" del tipo "Notification"
             )
             db.add(new_notification)
+
+            # Commit all changes together: invitation status, user_role_farm, notification
             db.commit()
 
             # Enviar notificación FCM al invitador (si tiene token)
             if inviter.fcm_token:
                 send_fcm_notification(inviter.fcm_token, "Invitación aceptada", notification_message)
+        else:
+             db.commit() # Commit invitation status and user_role_farm even if inviter not found
 
         return create_response("success", "Has aceptado la invitación exitosamente", status_code=200)
 
     elif action.lower() == "reject":
         # Cambiar el estado de la invitación a "Rechazada"
         invitation.status_id = rejected_status.status_id
-        db.commit()
 
         # Crear la notificación para el usuario que hizo la invitación (inviter_user_id)
         inviter = db.query(User).filter(User.user_id == invitation.inviter_user_id).first()
         if inviter:
             rejected_notification_type = db.query(NotificationType).filter(NotificationType.name == "invitation_rejected").first()
             if not rejected_notification_type:
+                db.rollback()
                 return create_response("error", "No se encontró el tipo de notificación 'invitation_rejected'", status_code=400)
 
-            notification_message = f"El usuario {user.name} ha rechazado tu invitación a la finca {invitation.farm.name}."
+            notification_message = f"El usuario {user.name} ha rechazado tu invitación como {invitation.suggested_role.name} a la finca TODO: farm.name."
             new_notification = Notification(
                 message=notification_message,
                 date=datetime.now(bogota_tz),
@@ -334,11 +336,15 @@ def respond_invitation(invitation_id: int, action: str, session_token: str, db: 
                 status_id=responded_status.status_id  # Estado "Respondida" del tipo "Notification"
             )
             db.add(new_notification)
+
+            # Commit invitation status and notification together
             db.commit()
 
             # Enviar notificación FCM al invitador (si tiene token)
             if inviter.fcm_token:
                 send_fcm_notification(inviter.fcm_token, "Invitación rechazada", notification_message)
+        else:
+            db.commit() # Commit invitation status even if inviter not found
 
         return create_response("success", "Has rechazado la invitación exitosamente", status_code=200)
 

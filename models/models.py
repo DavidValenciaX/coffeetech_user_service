@@ -6,10 +6,6 @@ import pytz
 
 Base = declarative_base()
 
-def get_colombia_time():
-    colombia_tz = pytz.timezone("America/Bogota")
-    return datetime.now(colombia_tz)
-
 # Modelo para UserRoleFarm (relación entre usuarios, roles y fincas)
 class UserRoleFarm(Base):
     """
@@ -210,8 +206,8 @@ class Invitation(Base):
         Identificador único de la invitación.
     email : str
         Correo electrónico del invitado.
-    suggested_role : str
-        Rol sugerido para el invitado.
+    suggested_role_id : int
+        Identificador del rol sugerido (relación con Role).
     status_id : int
         Relación con el estado de la invitación.
     farm_id : int
@@ -225,7 +221,7 @@ class Invitation(Base):
 
     invitation_id = Column(Integer, primary_key=True)
     email = Column(String(150), nullable=False)
-    suggested_role = Column(String(50), nullable=False)
+    suggested_role_id = Column(Integer, ForeignKey('role.role_id'), nullable=False) # Add this line
     status_id = Column(Integer, ForeignKey('status.status_id'), nullable=False)
     farm_id = Column(Integer, nullable=False)
     inviter_user_id = Column(Integer, ForeignKey('users.user_id'), nullable=False)
@@ -235,6 +231,7 @@ class Invitation(Base):
     status = relationship("Status")
     inviter = relationship("User", foreign_keys=[inviter_user_id])
     notifications = relationship("Notification", back_populates="invitation")
+    suggested_role = relationship("Role") # Add this relationship
 
 # Modelo para NotificationType
 class NotificationType(Base):

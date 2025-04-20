@@ -28,7 +28,7 @@ def create_response(
         for key, value in data.items():
             if isinstance(value, BaseModel):
                 data[key] = value.model_dump()
-            elif isinstance(value, Decimal):  # Manejo de objetos Decimal
+            elif isinstance(value, Decimal):
                 data[key] = float(value)
             elif isinstance(value, list):
                 data[key] = [item.model_dump() if isinstance(item, BaseModel) else item for item in value]
