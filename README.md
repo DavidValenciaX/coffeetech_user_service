@@ -98,3 +98,31 @@ To run the service in the background as a systemd service:
     tail -f /var/log/coffeetech.out.log
     tail -f /var/log/coffeetech.err.log
     ```
+
+### Updating the Service
+
+To update the running service with the latest changes from the main branch:
+
+1. Navigate to the project directory:
+
+    ```bash
+    cd /home/projects/coffeetech_services/coffeetech_user_service/
+    ```
+
+2. Pull the latest changes from the repository:
+
+    ```bash
+    git pull origin main
+    ```
+
+3. Update dependencies if necessary:
+
+    ```bash
+    uv sync
+    ```
+
+4. Restart the systemd service to apply the changes:
+
+    ```bash
+    sudo systemctl restart coffeetech-user-service
+    ```
