@@ -31,8 +31,10 @@ def send_email(email, token, email_type, farm_name=None, owner_name=None, sugges
     smtp_host = "smtp.zoho.com"
     smtp_port = 465
 
-    # Obtener la URL del logo desde variables de entorno o usar una URL por defecto
-    logo_url = os.getenv("LOGO_URL", "https://res.cloudinary.com/dh58mbonw/image/upload/v1745059649/u4iwdb6nsupnnsqwkvcn.jpg")
+    # Usar directamente las URLs para el logo en lugar de variables de entorno
+    # Primero intentamos con la URL del servidor, y si hay problemas, usamos la URL de Cloudinary como respaldo
+    logo_url = "http://173.212.224.226:8000/static/logo.jpeg"
+    fallback_logo_url = "https://res.cloudinary.com/dh58mbonw/image/upload/v1745059649/u4iwdb6nsupnnsqwkvcn.jpg"
     
     # Obtener la URL base de la aplicación desde variables de entorno
     app_base_url = os.getenv("APP_BASE_URL", "http://127.0.0.1:8000") # Default to localhost if not set
@@ -94,7 +96,7 @@ def send_email(email, token, email_type, farm_name=None, owner_name=None, sugges
         <body>
             <div class="container">
                 <div class="header">
-                    <img src="{logo_url}" alt="Logo de CoffeTech" class="logo">
+                    <img src="{logo_url}" alt="Logo de CoffeTech" class="logo" onerror="this.onerror=null;this.src='{fallback_logo_url}';">
                     <h2>Hola,</h2>
                 </div>
                 <div class="content">
@@ -165,7 +167,7 @@ def send_email(email, token, email_type, farm_name=None, owner_name=None, sugges
         <body>
             <div class="container">
                 <div class="header">
-                    <img src="{logo_url}" alt="Logo de CoffeTech" class="logo">
+                    <img src="{logo_url}" alt="Logo de CoffeTech" class="logo" onerror="this.onerror=null;this.src='{fallback_logo_url}';">
                     <h2>Hola,</h2>
                 </div>
                 <div class="content">
@@ -250,7 +252,7 @@ def send_email(email, token, email_type, farm_name=None, owner_name=None, sugges
         <body>
             <div class="container">
                 <div class="header">
-                    <img src="{logo_url}" alt="Logo de CoffeTech" class="logo">
+                    <img src="{logo_url}" alt="Logo de CoffeTech" class="logo" onerror="this.onerror=null;this.src='{fallback_logo_url}';">
                     <h2>Hola,</h2>
                 </div>
                 <div class="content">
