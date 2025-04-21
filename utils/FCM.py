@@ -2,6 +2,7 @@ import os
 import firebase_admin
 from firebase_admin import credentials, messaging
 from dotenv import load_dotenv
+import logging
 
 # Cargar las variables de entorno que pudieran ser usadas para otras cosas
 load_dotenv()
@@ -13,6 +14,9 @@ service_account_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 
 if not firebase_admin._apps:
     cred = credentials.Certificate(service_account_path)
     firebase_admin.initialize_app(cred)
+
+# Configurar logger
+logger = logging.getLogger(__name__)
 
 def send_fcm_notification(fcm_token: str, title: str, body: str):
     """
@@ -38,6 +42,6 @@ def send_fcm_notification(fcm_token: str, title: str, body: str):
     # Enviar la notificación
     try:
         response = messaging.send(message)
-        print('Notificación enviada correctamente:', response)
+        logger.info('Notificación enviada correctamente: %s', response)
     except Exception as e:
-        print('Error enviando la notificación:', str(e))
+        logger.error('Error enviando la notificación: %s', str(e))

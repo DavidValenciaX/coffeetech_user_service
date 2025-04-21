@@ -208,7 +208,6 @@ def forgot_password(request: PasswordResetRequest, db: Session = Depends(get_db_
         }
         logger.info("Token de restablecimiento almacenado globalmente para el correo: %s", request.email)
 
-        print (reset_token)
         # Guardar cambios en la base de datos
         db.commit()
         logger.info("Cambios guardados en la base de datos para el usuario: %s", user.email)

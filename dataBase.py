@@ -1,4 +1,5 @@
 import os
+import logging
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 from dotenv import load_dotenv
@@ -27,14 +28,17 @@ DB_PASSWORD = os.getenv("PGPASSWORD")
 
 SQLALCHEMY_DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
-print(SQLALCHEMY_DATABASE_URL)
 engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={'client_encoding': 'utf8'})
+
+# Configurar logger
+logger = logging.getLogger(__name__)
+
 try:
     with engine.connect() as connection:
         result = connection.execute(text("SELECT 1"))
-        print("Conexión exitosa a la base de datos")
+        logger.info("Conexión exitosa a la base de datos")
 except Exception as e:
-    print(f"Error al conectar a la base de datos: {e}")
+    logger.error(f"Error al conectar a la base de datos: {e}")
     
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
