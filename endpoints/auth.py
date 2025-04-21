@@ -169,9 +169,6 @@ def verify_email(request: VerifyTokenRequest, db: Session = Depends(get_db_sessi
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Error al verificar el correo: {str(e)}")
 
-
-# Declaración global del diccionario
-reset_tokens = {}
 @router.post("/forgot-password")
 def forgot_password(request: PasswordResetRequest, db: Session = Depends(get_db_session)):
     """
