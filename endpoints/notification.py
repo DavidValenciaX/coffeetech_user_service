@@ -8,6 +8,7 @@ from dataBase import get_db_session
 from pydantic import BaseModel
 import logging
 from fastapi.responses import ORJSONResponse
+from utils.response import create_response
 
 # Configurar el logger
 logging.basicConfig(level=logging.INFO)  # Cambia a DEBUG si necesitas más detalles
@@ -96,33 +97,6 @@ def get_notifications(session_token: str, db: Session = Depends(get_db_session))
 
     # Devolver la respuesta exitosa con las notificaciones encontradas
     return create_response("success", "Notificaciones obtenidas exitosamente.", data=notification_responses_dict)
-
-def create_response(
-    status: str,
-    message: str,
-    data: Optional[Any] = None,
-    status_code: int = 200
-) -> ORJSONResponse:
-    """
-    Crea una respuesta estructurada para el API.
-
-    Parámetros:
-    - status: Estado de la respuesta (ej. "success", "error").
-    - message: Mensaje adicional sobre la respuesta.
-    - data: Datos opcionales a incluir en la respuesta.
-    - status_code: Código de estado HTTP (default es 200).
-
-    Retorna:
-    - Respuesta en formato ORJSONResponse.
-    """
-    return ORJSONResponse(
-        status_code=status_code,
-        content={
-            "status": status,
-            "message": message,
-            "data": data or {}
-        }
-    )
 
 def session_token_invalid_response() -> ORJSONResponse:
     """
