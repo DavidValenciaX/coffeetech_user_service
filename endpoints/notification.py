@@ -34,14 +34,14 @@ class NotificationResponse(BaseModel):
 @router.get("/get-notification")
 def get_notifications(session_token: str, db: Session = Depends(get_db_session)):
     """
-    Endpoint para obtener las notificaciones de un usuario autenticado.
+    Retrieves all notifications for the authenticated user.
 
-    Parámetros:
-    - session_token: Token de sesión del usuario.
-    - db: Sesión de la base de datos (inyectada automáticamente).
+    Requires a valid `session_token` provided as a query parameter or header.
 
-    Retorna:
-    - Respuesta con las notificaciones del usuario.
+    Returns a list of notifications associated with the user identified by the
+    `session_token`. Each notification includes details like message, date, type,
+    associated IDs (invitation, farm), and status.
+    Returns an error if the `session_token` is invalid.
     """
     # Verificar el session_token y obtener el usuario autenticado
     user = verify_session_token(session_token, db)

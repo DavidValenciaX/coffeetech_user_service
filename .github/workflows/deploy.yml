@@ -42,6 +42,9 @@ jobs:
           
           # Reiniciar el servicio systemd
           systemctl restart coffeetech-user-service
+
+          # Verificar el estado del servicio
+          systemctl status coffeetech-user-service --no-pager
           
           echo "Deployment completed successfully!"
         EOF

@@ -88,15 +88,16 @@ def list_collaborators(
     db: Session = Depends(get_db_session)
 ):
     """
-    Endpoint para listar los colaboradores de una finca específica.
+    Lists all active collaborators associated with a specific farm.
 
-    Args:
-        farm_id (int): ID de la finca de la cual se listarán los colaboradores.
-        session_token (str): Token de sesión del usuario autenticado.
-        db (Session): Sesión de la base de datos.
+    Requires a valid `session_token` for the requesting user provided as a query parameter or header.
+    The requesting user must have the 'read_collaborators' permission for the specified farm.
 
-    Returns:
-        Dict[str, Any]: Respuesta con el estado de la operación y la lista de colaboradores.
+    - **farm_id**: The ID of the farm whose collaborators are to be listed (query parameter).
+
+    Returns a list of collaborators, including their user ID, name, email, and role on the farm.
+    Returns an error if the `session_token` is invalid, the farm is not found (TODO: check farm service),
+    or the user lacks the required permission.
     """
 
     # 1. Verificar el session_token y obtener el usuario autenticado
@@ -206,44 +207,21 @@ def edit_collaborator_role(
     db: Session = Depends(get_db_session)
 ):
     """
-    ### Descripción:
-    Endpoint para editar el rol de un colaborador en una finca específica.
+    Edits the role of a specific collaborator on a given farm.
 
-    ### Parámetros:
-    - **edit_request (EditCollaboratorRoleRequest)**: Objeto con los campos `collaborator_user_id` y `new_role`, que contiene la información del colaborador y el nuevo rol que se le asignará.
-    - **farm_id (int)**: ID de la finca donde se cambiará el rol del colaborador.
-    - **session_token (str)**: Token de sesión del usuario autenticado que está realizando la acción.
-    - **db (Session)**: Sesión de la base de datos obtenida mediante la dependencia `get_db_session`.
+    Requires a valid `session_token` for the requesting user provided as a query parameter or header.
+    The requesting user must have the appropriate permission (`edit_administrator_farm` or `edit_operator_farm`)
+    based on the role being assigned and adhere to role hierarchy rules.
 
-    ### Proceso:
-    1. **Validación de entrada**: Se valida la solicitud recibida.
-    2. **Autenticación**: Se verifica el `session_token` para autenticar al usuario.
-    3. **Verificación de la finca**: Se comprueba si la finca existe.
-    4. **Estado 'Activo'**: Se busca el estado 'Activo' para roles en fincas (`User_Role_Farm`).
-    5. **Rol actual del usuario**: Se verifica el rol del usuario que realiza la acción en la finca.
-    6. **Verificación del colaborador**: Se obtiene al colaborador cuyo rol se desea editar.
-    7. **Evitar auto-cambio de rol**: El usuario no puede cambiar su propio rol.
-    8. **Rol del colaborador actual**: Se comprueba el rol actual del colaborador en la finca.
-    9. **Permisos necesarios**: Se verifican los permisos del usuario para asignar el nuevo rol.
-    10. **Jerarquía de roles**: Se valida la jerarquía de roles para determinar si el usuario puede asignar el nuevo rol.
-    11. **Rol objetivo**: Se obtiene el rol que se desea asignar al colaborador.
-    12. **Actualización del rol**: Se actualiza el rol del colaborador en la base de datos.
-    
-    ### Respuestas:
-    - **200 (success)**: El rol del colaborador ha sido actualizado exitosamente.
-    - **400 (error)**: Error de validación de entrada o intento de asignar el mismo rol.
-    - **403 (error)**: El usuario no tiene permisos suficientes o intentó cambiar su propio rol.
-    - **404 (error)**: La finca o el colaborador no existen.
-    - **500 (error)**: Error interno del servidor al procesar la solicitud.
-    
-    ### Ejemplo de respuesta:
-    ```json
-    {
-        "status": "success",
-        "message": "Rol del colaborador 'Juan Pérez' actualizado a 'Administrador de finca' exitosamente",
-        "status_code": 200
-    }
-    ```
+    - **farm_id**: The ID of the farm where the collaborator's role is being changed (query parameter).
+    - **collaborator_user_id**: The ID of the user whose role is being edited (request body).
+    - **new_role**: The name of the new role to assign (e.g., "Administrador de finca", "Operador de campo") (request body).
+
+    Validates the request, checks user authentication and permissions, verifies farm and collaborator existence,
+    ensures the user is not changing their own role, checks role hierarchy, and updates the collaborator's
+    `UserRoleFarm` record with the new role ID.
+    Returns an error if validation fails, permissions are insufficient, the user attempts self-modification,
+    entities are not found, or the collaborator already has the target role.
     """
 
     # Validar la entrada
@@ -494,23 +472,20 @@ def delete_collaborator(
     db: Session = Depends(get_db_session)
 ):
     """
-    Elimina un colaborador de una finca específica.
+    Removes (marks as inactive) a collaborator's association with a specific farm.
 
-    Parámetros:
-    - delete_request (DeleteCollaboratorRequest): Cuerpo de la solicitud que contiene el ID del colaborador a eliminar.
-    - farm_id (int): ID de la finca desde la que se eliminará al colaborador.
-    - session_token (str): Token de sesión del usuario que realiza la solicitud.
-    - db (Session): Sesión de la base de datos proporcionada por FastAPI con `Depends`.
+    Requires a valid `session_token` for the requesting user provided as a query parameter or header.
+    The requesting user must have the appropriate permission (`delete_administrator_farm` or `delete_operator_farm`)
+    based on the role of the collaborator being removed.
 
-    Retornos:
-    - Dict[str, Any]: Respuesta indicando éxito o error con el mensaje adecuado.
+    - **farm_id**: The ID of the farm from which the collaborator is being removed (query parameter).
+    - **collaborator_user_id**: The ID of the user (collaborator) to remove from the farm (request body).
 
-    Posibles Respuestas:
-    - 200: Colaborador eliminado exitosamente.
-    - 400: Error en la validación de la solicitud o algún otro fallo.
-    - 403: El usuario no tiene permisos o está intentando eliminarse a sí mismo.
-    - 404: Finca o colaborador no encontrado.
-    - 500: Error en el servidor o al actualizar la base de datos.
+    Validates the request, checks user authentication and permissions, verifies farm and collaborator existence,
+    ensures the user is not removing themselves, and updates the collaborator's `UserRoleFarm` record status
+    to 'Inactivo'.
+    Returns an error if validation fails, permissions are insufficient, the user attempts self-removal,
+    or entities are not found.
     """
 
     # 1. Validar la entrada

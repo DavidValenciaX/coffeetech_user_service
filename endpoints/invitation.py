@@ -70,15 +70,21 @@ def has_permission(user: User, permission_name: str, db: Session) -> bool:
 @router.post("/create-invitation")
 def create_invitation(invitation_data: InvitationCreate, session_token: str, db: Session = Depends(get_db_session)):
     """
-    Crea una invitación para un usuario a una finca.
+    Creates an invitation for a registered user to join a specific farm with a suggested role.
 
-    Args:
-        invitation_data (InvitationCreate): Datos de la invitación a crear.
-        session_token (str): Token de sesión del usuario autenticado.
-        db (Session): Sesión de base de datos.
+    Requires a valid `session_token` for the inviting user provided as a query parameter or header.
+    The inviting user must have the necessary permissions (`add_administrator_farm` or `add_operator_farm`)
+    associated with their role on the specified farm.
 
-    Returns:
-        JSONResponse: Respuesta con el resultado de la creación de la invitación.
+    - **email**: Email address of the user to invite. Must be a registered user.
+    - **suggested_role_id**: ID of the role suggested for the invited user.
+    - **farm_id**: ID of the farm the user is being invited to.
+
+    Checks for existing active associations or pending invitations for the user to the farm.
+    Creates an `Invitation` record and a corresponding `Notification` for the invited user.
+    Sends an FCM notification if the invited user has an FCM token.
+    Returns an error if the inviting user lacks permissions, the invited user is already active
+    on the farm, has a pending invitation, or if the invited user is not registered.
     """
     # Validar el session_token y obtener el usuario autenticado (el invitador)
     user = verify_session_token(session_token, db)
@@ -218,16 +224,24 @@ def create_invitation(invitation_data: InvitationCreate, session_token: str, db:
 @router.post("/respond-invitation/{invitation_id}")
 def respond_invitation(invitation_id: int, action: str, session_token: str, db: Session = Depends(get_db_session)):
     """
-    Responde a una invitación con las acciones 'accept' o 'reject'.
-    
-    Parámetros:
-    - invitation_id: ID de la invitación a procesar.
-    - action: La acción a realizar ('accept' o 'reject').
-    - session_token: Token de sesión del usuario autenticado.
-    - db: Sesión de la base de datos (inyectada mediante Depends).
-    
-    Retorna:
-    - Un mensaje de éxito o error en función de la acción realizada.
+    Allows an invited user to accept or reject an invitation.
+
+    Requires a valid `session_token` for the invited user provided as a query parameter or header.
+
+    - **invitation_id**: The ID of the invitation being responded to (path parameter).
+    - **action**: The response action, must be either 'accept' or 'reject' (query parameter).
+
+    Verifies that the authenticated user is the recipient of the invitation.
+    Updates the status of the `Invitation` and the related `Notification`.
+    If accepted:
+        - Creates a `UserRoleFarm` record associating the user with the farm and the suggested role.
+        - Creates a notification for the user who sent the invitation.
+        - Sends an FCM notification to the inviter.
+    If rejected:
+        - Creates a notification for the user who sent the invitation.
+        - Sends an FCM notification to the inviter.
+    Returns an error if the invitation is not found, the user is not the recipient,
+    the invitation has already been processed, or the action is invalid.
     """
     # Validar el session_token y obtener el usuario autenticado
     user = verify_session_token(session_token, db)

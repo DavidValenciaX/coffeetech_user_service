@@ -5,16 +5,13 @@ from dataBase import get_db_session
 
 router = APIRouter()
 
-@router.get("/list-roles", summary="Obtener lista de roles", description="Obtiene una lista de todos los roles disponibles junto con sus permisos asociados.")
+@router.get("/list-roles")
 def list_roles(db: Session = Depends(get_db_session)):
     """
-    Obtiene una lista de todos los roles disponibles junto con sus permisos asociados.
+    Retrieves a list of all available roles and their associated permissions.
 
-    Args:
-        db (Session): Sesión de base de datos proporcionada por la dependencia.
-
-    Returns:
-        dict: Diccionario con el estado, mensaje y datos de los roles y sus permisos.
+    Returns a dictionary containing the list of roles, each with its ID, name,
+    and a list of permissions associated with that role.
     """
     # Consulta los roles y carga los permisos asociados
     roles = db.query(Role).all()
