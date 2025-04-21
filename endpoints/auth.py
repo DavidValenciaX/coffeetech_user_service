@@ -2,8 +2,8 @@ from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
 from models.models import User
-
-
+from utils.security import verify_session_token
+import re
 from utils.security import hash_password, generate_verification_token , verify_password
 from utils.email import send_email
 from utils.response import session_token_invalid_response
@@ -53,27 +53,8 @@ class LogoutRequest(BaseModel):
 
 class UpdateProfile(BaseModel):
     new_name: str
-   
 
 reset_tokens = {}
-
-
-# Función auxiliar para verificar tokens
-def verify_user_token(token: str, db: Session) -> User:
-    user = db.query(User).filter(User.verification_token == token).first()
-    if not user or (user.token_expiration and user.token_expiration < datetime.datetime.now(bogota_tz)):
-        return None
-    return user
-
-
-# Función auxiliar para verificar tokens de sesión
-def verify_session_token(session_token: str, db: Session) -> User:
-    user = db.query(User).filter(User.session_token == session_token).first()
-    if not user:
-        return None
-    return user
-
-import re
 
 # Función auxiliar para validar la contraseña
 def validate_password_strength(password: str) -> bool:

@@ -38,35 +38,6 @@ class InvitationCreate(BaseModel):
     suggested_role_id: int
     farm_id: int
 
-# Función auxiliar para crear una respuesta uniforme
-
-# Función auxiliar para verificar si el usuario tiene un permiso específico
-def has_permission(user: User, permission_name: str, db: Session) -> bool:
-    """
-    Verifica si el usuario tiene un permiso específico.
-
-    Args:
-        user (User): Usuario a verificar.
-        permission_name (str): Nombre del permiso a verificar.
-        db (Session): Sesión de base de datos.
-
-    Returns:
-        bool: True si el usuario tiene el permiso, False en caso contrario.
-    """
-    # Obtener los roles asociados al usuario en la finca
-    user_roles = db.query(UserRoleFarm).filter(UserRoleFarm.user_id == user.user_id).all()
-
-    for user_role in user_roles:
-        # Obtener los permisos asociados al rol del usuario
-        role_permissions = db.query(RolePermission).filter(RolePermission.role_id == user_role.role_id).all()
-
-        # Verificar si el permiso está en los permisos asociados al rol
-        for role_permission in role_permissions:
-            permission = db.query(Permission).filter(Permission.permission_id == role_permission.permission_id).first()
-            if permission and permission.name == permission_name:
-                return True
-    return False
-
 @router.post("/create-invitation")
 def create_invitation(invitation_data: InvitationCreate, session_token: str, db: Session = Depends(get_db_session)):
     """
@@ -91,7 +62,7 @@ def create_invitation(invitation_data: InvitationCreate, session_token: str, db:
     if not user:
         return session_token_invalid_response()
     
-    # Verificar si la finca existe 
+    # Verificar si la finca existe
     # TO DO: La nueva verificación de la finca se debe hacer por http al microservicio de fincas
 
     # Verificar si el usuario (invitador) está asociado a la finca y cuál es su rol
