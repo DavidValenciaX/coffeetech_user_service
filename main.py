@@ -44,4 +44,4 @@ def read_root():
         dict: Un diccionario con un mensaje de bienvenida.
     """
     logger.info("Root endpoint accessed")
-    return {"message": "Welcome to the FastAPI application CoffeeTech!"}
+    return {"message": "Welcome to the FastAPI application CoffeeTech User Service!"}
