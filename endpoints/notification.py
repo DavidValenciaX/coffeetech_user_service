@@ -10,8 +10,6 @@ import logging
 from fastapi.responses import ORJSONResponse
 from utils.response import create_response
 
-# Configurar el logger
-logging.basicConfig(level=logging.INFO)  # Cambia a DEBUG si necesitas más detalles
 logger = logging.getLogger(__name__)
 
 router = APIRouter()

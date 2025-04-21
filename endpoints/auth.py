@@ -16,8 +16,6 @@ import pytz
 
 bogota_tz = pytz.timezone("America/Bogota")
 
-# Configuración básica de logging
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 router = APIRouter()

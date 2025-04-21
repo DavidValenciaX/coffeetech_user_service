@@ -17,8 +17,6 @@ from utils.response import create_response, session_token_invalid_response
 from sqlalchemy import func
 import logging
 
-# Configuración básica de logging
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 router = APIRouter()

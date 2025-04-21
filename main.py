@@ -4,9 +4,13 @@ from endpoints import auth, utils, invitation, notification, collaborators
 from dataBase import engine
 from models.models import Base
 import os
-import logging
+from utils.logger import setup_logger
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+
+# Setup logging for the entire application
+logger = setup_logger()
+logger.info("Starting CoffeeTech User Service")
 
 # Crear todas las tablas
 Base.metadata.create_all(bind=engine)
@@ -15,9 +19,6 @@ app = FastAPI()
 
 # Montar el directorio 'assets' en la ruta '/static'
 app.mount("/static", StaticFiles(directory="assets"), name="static")
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 # Incluir las rutas de auth con prefijo y etiqueta
 app.include_router(auth.router, prefix="/auth", tags=["Autenticación"])
@@ -34,8 +35,6 @@ app.include_router(notification.router, prefix="/notification", tags=["Notificac
 # Incluir las rutas de colaboradores
 app.include_router(collaborators.router, prefix="/collaborators", tags=["Collaborators"])
 
-# Incluir las rutas de farm con prefijo y etiqueta
-
 @app.get("/")
 def read_root():
     """
@@ -44,4 +43,5 @@ def read_root():
     Returns:
         dict: Un diccionario con un mensaje de bienvenida.
     """
+    logger.info("Root endpoint accessed")
     return {"message": "Welcome to the FastAPI application CoffeeTech!"}
