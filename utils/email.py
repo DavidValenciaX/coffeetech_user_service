@@ -24,7 +24,7 @@ def send_email(email, token, email_type, farm_name=None, owner_name=None, sugges
     smtp_pass = os.getenv("SMTP_PASS")
 
     if not smtp_user or not smtp_pass:
-        print("Error: Las credenciales SMTP no están configuradas correctamente.")
+        logger.error("Las credenciales SMTP no están configuradas correctamente.")
         return
 
     smtp_host = "smtp.zoho.com"
@@ -269,7 +269,7 @@ def send_email(email, token, email_type, farm_name=None, owner_name=None, sugges
         </html>
         """
     else:
-        print("Error: Tipo de correo no reconocido.")
+        logger.error(f"Tipo de correo no reconocido: {email_type}")
         return
 
     # Crear el mensaje de correo electrónico
@@ -286,6 +286,6 @@ def send_email(email, token, email_type, farm_name=None, owner_name=None, sugges
         with smtplib.SMTP_SSL(smtp_host, smtp_port) as server:
             server.login(smtp_user, smtp_pass)
             server.sendmail(smtp_user, email, msg.as_string())
-        print(f"Correo de {email_type} enviado a {email}.")
+        logger.info(f"Correo de {email_type} enviado a {email}.")
     except Exception as e:
-        print(f"Error al enviar correo: {e}")
+        logger.error(f"Error al enviar correo a {email}: {e}")
