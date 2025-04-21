@@ -1,10 +1,44 @@
-
 from fastapi.responses import JSONResponse, ORJSONResponse
 from datetime import datetime, date, time
 from uuid import UUID
 from typing import Any, Optional
 from pydantic import BaseModel
 from decimal import Decimal
+
+def process_data_for_json(value: Any) -> Any:
+    """
+    Procesa datos para serialización JSON, manejando tipos especiales:
+      - BaseModel (Pydantic)
+      - Decimal
+      - datetime, date, time
+      - UUID
+      - colecciones anidadas (dict, list, tuple, set)
+
+    Args:
+        value (Any): Valor a procesar para serialización JSON
+
+    Returns:
+        Any: Valor procesado compatible con JSON
+    """
+    # BaseModel -> dict
+    if isinstance(value, BaseModel):
+        return value.model_dump()
+    # Decimal -> float
+    if isinstance(value, Decimal):
+        return float(value)
+    # datetime types -> ISO string
+    if isinstance(value, (datetime, date, time)):
+        return value.isoformat()
+    # UUID -> str
+    if isinstance(value, UUID):
+        return str(value)
+    # Collections -> process recursively
+    if isinstance(value, dict):
+        return {k: process_data_for_json(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple, set)):
+        return [process_data_for_json(item) for item in value]
+    # Leave other types as-is
+    return value
 
 def create_response(
     status: str,
@@ -31,28 +65,7 @@ def create_response(
         ORJSONResponse: Respuesta con JSON ultra-rápido.
     """
     
-    def _process(value: Any) -> Any:
-        # BaseModel -> dict
-        if isinstance(value, BaseModel):
-            return value.model_dump()
-        # Decimal -> float
-        if isinstance(value, Decimal):
-            return float(value)
-        # datetime types -> ISO string
-        if isinstance(value, (datetime, date, time)):
-            return value.isoformat()
-        # UUID -> str
-        if UUID and isinstance(value, UUID):
-            return str(value)
-        # Collections -> process recursively
-        if isinstance(value, dict):
-            return {k: _process(v) for k, v in value.items()}
-        if isinstance(value, (list, tuple, set)):
-            return [_process(item) for item in value]
-        # Leave other types as-is
-        return value
-
-    processed = _process(data) if data is not None else {}
+    processed = process_data_for_json(data) if data is not None else {}
 
     return ORJSONResponse(
         status_code=status_code,
