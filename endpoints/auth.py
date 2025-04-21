@@ -95,12 +95,16 @@ def validate_password_strength(password: str) -> bool:
 @router.post("/register")
 def register_user(user: UserCreate, db: Session = Depends(get_db_session)):
     """
-    Registra un nuevo usuario.
+    Registers a new user in the system.
 
-    - **name**: El nombre completo del usuario.
-    - **email**: El correo electrónico del usuario.
-    - **password**: La contraseña del usuario.
-    - **passwordConfirmation**: Confirmación de la contraseña.
+    - **name**: The full name of the user.
+    - **email**: The user's email address. Must be unique.
+    - **password**: The user's password. Must meet strength requirements.
+    - **passwordConfirmation**: Confirmation of the user's password. Must match the password.
+
+    Sends a verification email upon successful registration.
+    Returns an error if the email is already registered, passwords don't match,
+    or the password doesn't meet strength requirements.
     """
     # Validación del nombre (no puede estar vacío)
     if not user.name.strip():
@@ -153,9 +157,12 @@ def register_user(user: UserCreate, db: Session = Depends(get_db_session)):
 @router.post("/verify")
 def verify_email(request: VerifyTokenRequest, db: Session = Depends(get_db_session)):
     """
-    Verifica el correo electrónico de un usuario.
+    Verifies a user's email address using a provided token.
 
-    - **token**: El token enviado al correo electrónico del usuario.
+    - **token**: The verification token sent to the user's email.
+
+    Updates the user's status to "Verified" if the token is valid.
+    Returns an error if the token is invalid or expired.
     """
     user = db.query(User).filter(User.verification_token == request.token).first()
     
@@ -187,9 +194,13 @@ reset_tokens = {}
 @router.post("/forgot-password")
 def forgot_password(request: PasswordResetRequest, db: Session = Depends(get_db_session)):
     """
-    Inicia el proceso de restablecimiento de contraseña.
+    Initiates the password reset process for a user.
 
-    - **email**: El correo electrónico del usuario que solicita el restablecimiento.
+    - **email**: The email address of the user requesting the password reset.
+
+    Generates a password reset token, stores it temporarily, and sends it
+    to the user's email address.
+    Returns an error if the email is not found in the database.
     """
     global reset_tokens  # Aseguramos que estamos usando la variable global
 
@@ -241,40 +252,14 @@ def forgot_password(request: PasswordResetRequest, db: Session = Depends(get_db_
 @router.post("/verify-token")
 def verify_token(request: VerifyTokenRequest, db: Session = Depends(get_db_session)):
     """
-Verificación de Token de Restablecimiento de Contraseña
+    Verifies if a password reset token is valid and has not expired.
 
-Este endpoint permite verificar si un token de restablecimiento de contraseña es válido y no ha expirado.
+    - **token**: The password reset token to verify.
 
-- **URL**: `/verify-token`
-- **Método**: `POST`
-- **Cuerpo de la solicitud**:
-  - `token` (string): El token de verificación que debe ser validado.
-
-- **Respuestas**:
-  - **200 OK**: El token es válido y se puede proceder con el restablecimiento de contraseña.
-    ```json
-    {
-        "status": "success",
-        "message": "Token válido. Puede proceder a restablecer la contraseña."
-    }
-    ```
-  - **400 Bad Request**: El token es inválido o ha expirado.
-    ```json
-    {
-        "status": "error",
-        "message": "Token ha expirado" / "Token inválido o expirado"
-    }
-    ```
-
-- **Ejemplo de solicitud**:
-    ```bash
-    curl -X POST "https://tu-api.com/verify-token" \
-    -H "Content-Type: application/json" \
-    -d '{"token": "abcd1234"}'
-    ```
-
-- **Logs**: El endpoint genera logs para el inicio y la finalización del proceso de verificación del token, así como cualquier token expirado o inválido.
-"""
+    Checks the token against the in-memory store.
+    Returns a success message if the token is valid, allowing the user to proceed
+    with password reset. Returns an error if the token is invalid or expired.
+    """
     global reset_tokens
 
     logger.info("Iniciando la verificación del token: %s", request.token)
@@ -302,42 +287,17 @@ Este endpoint permite verificar si un token de restablecimiento de contraseña e
 @router.post("/reset-password")
 def reset_password(reset: PasswordReset, db: Session = Depends(get_db_session)):
     """
-Restablecimiento de Contraseña
+    Resets the user's password using a valid reset token.
 
-Este endpoint permite restablecer la contraseña de un usuario, siempre que el token sea válido y no haya expirado.
+    - **token**: The password reset token.
+    - **new_password**: The new password for the user. Must meet strength requirements.
+    - **confirm_password**: Confirmation of the new password. Must match `new_password`.
 
-- **URL**: `/reset-password`
-- **Método**: `POST`
-- **Cuerpo de la solicitud**:
-  - `token` (string): El token de verificación.
-  - `new_password` (string): La nueva contraseña.
-  - `confirm_password` (string): Confirmación de la nueva contraseña.
-
-- **Respuestas**:
-  - **200 OK**: La contraseña fue restablecida exitosamente.
-    ```json
-    {
-        "status": "success",
-        "message": "Contraseña restablecida exitosamente"
-    }
-    ```
-  - **400 Bad Request**: Las contraseñas no coinciden, no cumplen con los requisitos, o el token es inválido o ha expirado.
-    ```json
-    {
-        "status": "error",
-        "message": "Las contraseñas no coinciden" / "Token ha expirado" / "Token inválido o expirado"
-    }
-    ```
-
-- **Ejemplo de solicitud**:
-    ```bash
-    curl -X POST "https://tu-api.com/reset-password" \
-    -H "Content-Type: application/json" \
-    -d '{"token": "abcd1234", "new_password": "NewPassword123!", "confirm_password": "NewPassword123!"}'
-    ```
-
-- **Logs**: Se generan logs detallados para cada paso, incluidos errores al actualizar la contraseña o si el token ha expirado.
-"""
+    Updates the user's password if the token is valid, not expired, passwords match,
+    and the new password meets strength requirements. Invalidates the token after use.
+    Returns an error if passwords don't match, the new password is weak,
+    or the token is invalid/expired.
+    """
     global reset_tokens  # Aseguramos que estamos usando la variable global
 
     logger.info("Iniciando el proceso de restablecimiento de contraseña para el token: %s", reset.token)
@@ -413,46 +373,18 @@ logger.info("Aplicación iniciada")
 @router.post("/login")
 def login(request: LoginRequest, db: Session = Depends(get_db_session)):
     """
-Inicio de Sesión
+    Authenticates a user and provides a session token.
 
-Este endpoint permite a los usuarios autenticarse mediante correo electrónico y contraseña. Si el correo no está verificado, se enviará un nuevo token de verificación.
+    - **email**: The user's email address.
+    - **password**: The user's password.
+    - **fcm_token**: The Firebase Cloud Messaging token for push notifications.
 
-- **URL**: `/login`
-- **Método**: `POST`
-- **Cuerpo de la solicitud**:
-  - `email` (string): Correo electrónico del usuario.
-  - `password` (string): Contraseña del usuario.
-  - `fcm_token` (string): Token FCM para notificaciones push.
-
-- **Respuestas**:
-  - **200 OK**: El inicio de sesión fue exitoso.
-    ```json
-    {
-        "status": "success",
-        "message": "Inicio de sesión exitoso",
-        "data": {
-            "session_token": "abcd1234",
-            "name": "Usuario Ejemplo"
-        }
-    }
-    ```
-  - **400 Bad Request**: Credenciales incorrectas o el correo no ha sido verificado.
-    ```json
-    {
-        "status": "error",
-        "message": "Credenciales incorrectas" / "Debes verificar tu correo antes de iniciar sesión"
-    }
-    ```
-
-- **Ejemplo de solicitud**:
-    ```bash
-    curl -X POST "https://tu-api.com/login" \
-    -H "Content-Type: application/json" \
-    -d '{"email": "user@example.com", "password": "MySecurePassword", "fcm_token": "fcmToken123"}'
-    ```
-
-- **Logs**: Se registran logs para errores de autenticación, generación de tokens de sesión y cualquier error durante el inicio de sesión.
-"""
+    Verifies the user's credentials and email verification status.
+    If credentials are valid and the email is verified, generates a session token,
+    stores the FCM token, and returns the session token and user's name.
+    If the email is not verified, resends the verification email.
+    Returns an error for incorrect credentials or if email verification is required.
+    """
     user = db.query(User).filter(User.email == request.email).first()
 
     if not user or not verify_password(request.password, user.password_hash):
@@ -490,42 +422,19 @@ Este endpoint permite a los usuarios autenticarse mediante correo electrónico y
 @router.put("/change-password")
 def change_password(change: PasswordChange, session_token: str, db: Session = Depends(get_db_session)):
     """
-Cambio de Contraseña
+    Allows an authenticated user to change their password.
 
-Este endpoint permite a los usuarios cambiar su contraseña siempre que proporcionen la contraseña actual correctamente.
+    Requires a valid `session_token` provided as a query parameter or header.
 
-- **URL**: `/change-password`
-- **Método**: `PUT`
-- **Cuerpo de la solicitud**:
-  - `current_password` (string): La contraseña actual.
-  - `new_password` (string): La nueva contraseña.
-  - `confirm_password` (string): Confirmación de la nueva contraseña.
+    - **current_password**: The user's current password.
+    - **new_password**: The desired new password. Must meet strength requirements.
 
-- **Respuestas**:
-  - **200 OK**: El cambio de contraseña fue exitoso.
-    ```json
-    {
-        "status": "success",
-        "message": "Cambio de contraseña exitoso"
-    }
-    ```
-  - **400 Bad Request**: Las contraseñas no coinciden, no cumplen con los requisitos de seguridad, o la contraseña actual es incorrecta.
-    ```json
-    {
-        "status": "error",
-        "message": "Credenciales incorrectas" / "Las contraseñas no coinciden"
-    }
-    ```
-
-- **Ejemplo de solicitud**:
-    ```bash
-    curl -X PUT "https://tu-api.com/change-password" \
-    -H "Content-Type: application/json" \
-    -d '{"current_password": "OldPassword123!", "new_password": "NewPassword123!", "confirm_password": "NewPassword123!"}'
-    ```
-
-- **Logs**: Se registran logs para errores de validación de contraseñas, así como cualquier error al confirmar cambios en la base de datos.
-"""
+    Verifies the `session_token` and the `current_password`.
+    Updates the password if the current password is correct and the new password
+    meets strength requirements.
+    Returns an error if the session token is invalid, the current password is incorrect,
+    or the new password is weak.
+    """
     user = verify_session_token(session_token, db)
     if not user or not verify_password(change.current_password, user.password_hash):
         return create_response("error", "Credenciales incorrectas")
@@ -545,18 +454,16 @@ Este endpoint permite a los usuarios cambiar su contraseña siempre que proporci
 
 
 # Cerrar sesión
-# Cerrar sesión
 @router.post("/logout")
 def logout(request: LogoutRequest, db: Session = Depends(get_db_session)):
     """
-    Cierra la sesión de un usuario eliminando su session_token y fcm_token.
+    Logs out a user by invalidating their session token and FCM token.
 
-    - **request**: Objeto `LogoutRequest` que contiene el `session_token`.
-    - **db**: Sesión de base de datos inyectada con `Depends(get_db_session)`.
+    - **session_token**: The session token of the user to log out.
 
-    **Retornos**:
-    - Respuesta de éxito si el cierre de sesión fue exitoso.
-    - Respuesta de error si el token de sesión es inválido o si ocurre algún error durante el proceso de cierre de sesión.
+    Finds the user by the session token and clears their `session_token`
+    and `fcm_token` fields in the database.
+    Returns an error if the session token is invalid.
     """
     
     user = verify_session_token(request.session_token, db)
@@ -576,14 +483,13 @@ def logout(request: LogoutRequest, db: Session = Depends(get_db_session)):
 @router.delete("/delete-account")
 def delete_account(session_token: str, db: Session = Depends(get_db_session)):
     """
-    Elimina la cuenta de un usuario en función de su token de sesión.
+    Deletes the account of the currently authenticated user.
 
-    - **session_token**: El token de sesión del usuario.
-    - **db**: Sesión de base de datos inyectada con `Depends(get_db_session)`.
+    Requires a valid `session_token` provided as a query parameter or header.
 
-    **Retornos**:
-    - Respuesta de éxito si la cuenta fue eliminada correctamente.
-    - Respuesta de error si el token de sesión es inválido o si ocurre algún error durante la eliminación de la cuenta.
+    Finds the user by the session token and permanently deletes their record
+    from the database.
+    Returns an error if the session token is invalid.
     """
     user = verify_session_token(session_token, db)
     if not user:
@@ -600,15 +506,14 @@ def delete_account(session_token: str, db: Session = Depends(get_db_session)):
 @router.post("/update-profile")
 def update_profile(profile: UpdateProfile, session_token: str, db: Session = Depends(get_db_session)):
     """
-    Actualiza el perfil del usuario (actualmente solo el nombre) usando su token de sesión.
+    Updates the profile information (currently only the name) for the authenticated user.
 
-    - **profile**: Objeto `UpdateProfile` que contiene el nuevo nombre del usuario.
-    - **session_token**: El token de sesión del usuario.
-    - **db**: Sesión de base de datos inyectada con `Depends(get_db_session)`.
+    Requires a valid `session_token` provided as a query parameter or header.
 
-    **Retornos**:
-    - Respuesta de éxito si el perfil se actualizó correctamente.
-    - Respuesta de error si el token de sesión es inválido, el nombre está vacío, o si ocurre algún error durante la actualización del perfil.
+    - **new_name**: The new name for the user. Cannot be empty.
+
+    Finds the user by the session token and updates their name.
+    Returns an error if the session token is invalid or the new name is empty.
     """
     user = verify_session_token(session_token, db)
     if not user:

@@ -1,0 +1,47 @@
+name: Deploy to Production Server
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:  # Permite ejecutar el workflow manualmente desde la interfaz de GitHub
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Set up SSH
+      uses: webfactory/ssh-agent@v0.7.0
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+        
+    - name: Setup known hosts
+      run: |
+        mkdir -p ~/.ssh
+        ssh-keyscan -H 173.212.224.226 >> ~/.ssh/known_hosts
+        
+    - name: Deploy to production server
+      env:
+        HOST: 173.212.224.226
+        USER: root
+        DEPLOY_PATH: /home/projects/coffeetech_services/coffeetech_user_service/
+      run: |
+        echo "Deploying to production server..."
+        # Transferir archivos al servidor
+        rsync -avz --exclude '.git' --exclude '.github' --exclude '__pycache__' ./ $USER@$HOST:$DEPLOY_PATH
+        
+        # Conectar por SSH para ejecutar los comandos de despliegue
+        ssh $USER@$HOST << 'EOF'
+          cd /home/projects/coffeetech_services/coffeetech_user_service/
+          
+          # Instalar/actualizar dependencias
+          /root/.local/bin/uv sync
+          
+          # Reiniciar el servicio systemd
+          systemctl restart coffeetech-user-service
+          
+          echo "Deployment completed successfully!"
+        EOF
