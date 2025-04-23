@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from typing import Any, Optional
+from typing import Optional
 from datetime import datetime
 from models.models import Notification
 from utils.security import verify_session_token

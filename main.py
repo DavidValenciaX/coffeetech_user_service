@@ -5,6 +5,7 @@ from dataBase import engine
 from models.models import Base
 import os
 from utils.logger import setup_logger
+from endpoints.token import router as token_router
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
@@ -34,6 +35,9 @@ app.include_router(notification.router, prefix="/notification", tags=["Notificac
 
 # Incluir las rutas de colaboradores
 app.include_router(collaborators.router, prefix="/collaborators", tags=["Collaborators"])
+
+# Agregar el router de verificación de tokens
+app.include_router(token_router, prefix="/api/token", tags=["token"])
 
 @app.get("/")
 def read_root():
