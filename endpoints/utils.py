@@ -18,7 +18,7 @@ def list_roles(db: Session = Depends(get_db_session)):
 
     # Construir la respuesta con roles y sus permisos
     return {
-        "state": "success",
+        "status": "success",
         "message": "Roles obtenidos correctamente",
         "data": [
             {
