@@ -24,7 +24,7 @@ DB_PASSWORD = os.getenv("PGPASSWORD")
 
 SQLALCHEMY_DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
-engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={'client_encoding': 'utf8'})
+engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={'client_encoding': 'utf8'}, pool_pre_ping=True)
 
 # Configurar logger
 logger = logging.getLogger(__name__)
