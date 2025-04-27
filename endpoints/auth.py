@@ -448,13 +448,6 @@ def logout(request: LogoutRequest, db: Session = Depends(get_db_session)):
         return session_token_invalid_response() 
         
     try:
-        user = session.user # Get the user from the session relationship
-        if user:
-           device = db.query(UserDevices).filter(UserDevices.user_id == user.user_id).first()
-           if device:
-               db.delete(device)
-               db.commit()
-
         # Delete the session record
         db.delete(session)
         db.commit()
