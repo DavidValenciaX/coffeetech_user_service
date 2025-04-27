@@ -1,18 +1,14 @@
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
-from models.models import User
+from models.models import Users, UserSessions, UserDevices
 from utils.security import verify_session_token
-import re
 from utils.security import hash_password, generate_verification_token , verify_password
 from utils.email import send_email
-from utils.response import session_token_invalid_response
-from utils.response import create_response
+from utils.response import create_response, session_token_invalid_response
 from dataBase import get_db_session
-import datetime
-import logging
-from utils.status import get_state
-import pytz
+from utils.state import get_state
+import datetime, re, logging, pytz
 
 bogota_tz = pytz.timezone("America/Bogota")
 
@@ -98,7 +94,7 @@ def register_user(user: UserCreate, db: Session = Depends(get_db_session)):
     if not validate_password_strength(user.password):
         return create_response("error", "La contraseña debe tener al menos 8 caracteres, incluir una letra mayúscula, una letra minúscula, un número y un carácter especial")
     
-    db_user = db.query(User).filter(User.email == user.email).first()
+    db_user = db.query(Users).filter(Users.email == user.email).first()
     if db_user:
         return create_response("error", "El correo ya está registrado")
 
@@ -106,18 +102,18 @@ def register_user(user: UserCreate, db: Session = Depends(get_db_session)):
         password_hash = hash_password(user.password)
         verification_token = generate_verification_token(4)
 
-         # Usar get_state para obtener el estado "No Verificado" del tipo "User"
-        status_record = get_state(db, "No Verificado", "User")
-        if not status_record:
-            return create_response("error", "No se encontró el estado 'No Verificado' para el tipo 'User'", status_code=400)
+        # Usar get_state para obtener el estado "No Verificado" del tipo "Users"
+        user_registry_state = get_state(db, "No Verificado", "Users")
+        if not user_registry_state:
+            return create_response("error", "No se encontró el estado 'No Verificado' para el tipo 'Users'", status_code=400)
 
         # Crear el nuevo usuario con estado "No Verificado"
-        new_user = User(
+        new_user = Users(
             name=user.name,
             email=user.email,
             password_hash=password_hash,
             verification_token=verification_token,
-            status_id=status_record.status_id  # Asignamos el status_id dinámicamente
+            user_state_id=user_registry_state.user_state_id
         )
 
         db.add(new_user)
@@ -138,23 +134,23 @@ def verify_email(request: VerifyTokenRequest, db: Session = Depends(get_db_sessi
 
     - **token**: The verification token sent to the user's email.
 
-    Updates the user's status to "Verified" if the token is valid.
+    Updates the user's state to "Verified" if the token is valid.
     Returns an error if the token is invalid or expired.
     """
-    user = db.query(User).filter(User.verification_token == request.token).first()
+    user = db.query(Users).filter(Users.verification_token == request.token).first()
     
     if not user:
         return create_response("error", "Token inválido")
     
     try:
-        # Usar get_state para obtener el estado "Verificado" del tipo "User"
-        status_verified = get_state(db, "Verificado", "User")
-        if not status_verified:
-            return create_response("error", "No se encontró el estado 'Verificado' para el tipo 'User'", status_code=400)
+        # Usar get_state para obtener el estado "Verificado" del tipo "Users"
+        verified_user_state = get_state(db, "Verificado", "Users")
+        if not verified_user_state:
+            return create_response("error", "No se encontró el estado 'Verificado' para el tipo 'Users'", status_code=400)
 
         # Actualizar el usuario: marcar como verificado y cambiar el status_id
         user.verification_token = None
-        user.status_id = status_verified.status_id
+        user.user_state_id = verified_user_state.user_state_id
         
         # Guardar los cambios en la base de datos
         db.commit()
@@ -180,7 +176,7 @@ def forgot_password(request: PasswordResetRequest, db: Session = Depends(get_db_
 
     logger.info("Iniciando el proceso de restablecimiento de contraseña para el correo: %s", request.email)
     
-    user = db.query(User).filter(User.email == request.email).first()
+    user = db.query(Users).filter(Users.email == request.email).first()
     
     if not user:
         logger.warning("Correo no encontrado: %s", request.email)
@@ -223,7 +219,7 @@ def forgot_password(request: PasswordResetRequest, db: Session = Depends(get_db_
 
 
 @router.post("/verify-token")
-def verify_token(request: VerifyTokenRequest, db: Session = Depends(get_db_session)):
+def verify_token(request: VerifyTokenRequest):
     """
     Verifies if a password reset token is valid and has not expired.
 
@@ -301,7 +297,7 @@ def reset_password(reset: PasswordReset, db: Session = Depends(get_db_session)):
             return create_response("error", "El token ha expirado")
 
         # Obtener el usuario de la base de datos usando el token
-        user = db.query(User).filter(User.verification_token == reset.token).first()
+        user = db.query(Users).filter(Users.verification_token == reset.token).first()
         if not user:
             logger.warning("Usuario no encontrado para el token: %s", reset.token)
             return create_response("error", "Usuario no encontrado")
@@ -345,17 +341,17 @@ def login(request: LoginRequest, db: Session = Depends(get_db_session)):
 
     Verifies the user's credentials and email verification status.
     If credentials are valid and the email is verified, generates a session token,
-    stores the FCM token, and returns the session token and user's name.
+    stores the FCM token, creates a user session record, and returns the session token and user's name.
     If the email is not verified, resends the verification email.
     Returns an error for incorrect credentials or if email verification is required.
     """
-    user = db.query(User).filter(User.email == request.email).first()
+    user = db.query(Users).filter(Users.email == request.email).first()
 
     if not user or not verify_password(request.password, user.password_hash):
         return create_response("error", "Credenciales incorrectas")
 
-    status_verified = get_state(db, "Verificado", "User")
-    if not status_verified or user.status_id != status_verified.status_id:
+    verified_user_state = get_state(db, "Verificado", "Users")
+    if not verified_user_state or user.user_state_id != verified_user_state.user_state_id:
         new_verification_token = generate_verification_token(4)
         user.verification_token = new_verification_token
 
@@ -369,8 +365,26 @@ def login(request: LoginRequest, db: Session = Depends(get_db_session)):
 
     try:
         session_token = generate_verification_token(32)
-        user.session_token = session_token
-        user.fcm_token = request.fcm_token
+        
+        # Create a new UserSession record
+        new_session = UserSessions(
+            user_id=user.user_id,
+            session_token=session_token
+        )
+        db.add(new_session)
+
+        # Optionally update or create UserDevice record for FCM token
+        # Check if a device with this FCM token already exists for this user
+        device = db.query(UserDevices).filter(UserDevices.user_id == user.user_id, UserDevices.fcm_token == request.fcm_token).first()
+        if not device:
+            # If not, create a new device record
+            new_device = UserDevices(
+                user_id=user.user_id,
+                fcm_token=request.fcm_token
+            )
+            db.add(new_device)
+        # If device exists, no action needed unless you want to update timestamp etc.
+
         db.commit()
 
         # Agrega un log para asegurarte de que el token fue generado
@@ -379,6 +393,8 @@ def login(request: LoginRequest, db: Session = Depends(get_db_session)):
         return create_response("success", "Inicio de sesión exitoso", {"session_token": session_token, "name": user.name})
     except Exception as e:
         db.rollback()
+        # Log the detailed error
+        logger.error(f"Error durante el inicio de sesión para {request.email}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error durante el inicio de sesión: {str(e)}")
 
 @router.put("/change-password")
@@ -417,25 +433,37 @@ def change_password(change: PasswordChange, session_token: str, db: Session = De
 @router.post("/logout")
 def logout(request: LogoutRequest, db: Session = Depends(get_db_session)):
     """
-    Logs out a user by invalidating their session token and FCM token.
+    Logs out a user by deleting their session token record.
 
     - **session_token**: The session token of the user to log out.
 
-    Finds the user by the session token and clears their `session_token`
-    and `fcm_token` fields in the database.
+    Finds the session by the session token and deletes the corresponding
+    `UserSessions` record from the database. Optionally clears the FCM token.
     Returns an error if the session token is invalid.
     """
     
-    user = verify_session_token(request.session_token, db)
-    if not user:
-        return session_token_invalid_response()
+    # Find the session record using the token
+    session = db.query(UserSessions).filter(UserSessions.session_token == request.session_token).first()
+
+    if not session:
+        # Use the standard invalid token response
+        return session_token_invalid_response() 
+        
     try:
-        user.session_token = None  # Borrar el session_token
-        user.fcm_token = None  # Borrar el fcm_token también
+        user = session.user # Get the user from the session relationship
+        if user:
+           device = db.query(UserDevices).filter(UserDevices.user_id == user.user_id).first()
+           if device:
+               db.delete(device) # Delete the device record if it exists
+               db.commit() # Commit the deletion of the device record
+
+        # Delete the session record
+        db.delete(session)
         db.commit()
         return create_response("success", "Cierre de sesión exitoso")
     except Exception as e:
         db.rollback()
+        logger.error(f"Error durante el cierre de sesión para el token {request.session_token}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error durante el cierre de sesión: {str(e)}")
 
 @router.delete("/delete-account")
