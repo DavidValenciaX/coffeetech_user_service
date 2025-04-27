@@ -1,10 +1,9 @@
 import os
 import logging
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy.orm import sessionmaker
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, text
-from sqlalchemy.ext.declarative import declarative_base
 
 # Función para recargar .env
 def reload_env():
@@ -16,9 +15,6 @@ def reload_env():
 
 # Cargar variables de entorno
 reload_env()
-
-# Definir la base para los modelos de SQLAlchemy
-Base = declarative_base()
 
 DB_HOST = os.getenv("PGHOST")
 DB_PORT = os.getenv("PGPORT")
