@@ -125,7 +125,7 @@ def register_user(user: UserCreate, db: Session = Depends(get_db_session)):
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Error al registrar usuario o enviar correo: {str(e)}")
 
-@router.post("/verify")
+@router.post("/verify-email") # Renamed from /verify
 def verify_email(request: VerifyTokenRequest, db: Session = Depends(get_db_session)):
     """
     Verifies a user's email address using a provided token.
@@ -170,7 +170,7 @@ def forgot_password(request: PasswordResetRequest, db: Session = Depends(get_db_
     to the user's email address.
     Returns an error if the email is not found in the database.
     """
-    global reset_tokens  # Aseguramos que estamos usando la variable global
+    global reset_tokens
 
     logger.info("Iniciando el proceso de restablecimiento de contraseña para el correo: %s", request.email)
     
@@ -216,7 +216,7 @@ def forgot_password(request: PasswordResetRequest, db: Session = Depends(get_db_
         raise HTTPException(status_code=500, detail=f"Error sending password reset email: {str(e)}")
 
 
-@router.post("/verify-token")
+@router.post("/verify-reset-token") # Renamed from /verify-token
 def verify_token(request: VerifyTokenRequest):
     """
     Verifies if a password reset token is valid and has not expired.

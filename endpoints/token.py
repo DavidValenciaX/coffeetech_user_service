@@ -32,7 +32,7 @@ class UserResponse(BaseModel):
     name: str
     email: str
 
-@router.post("/verify-token")
+@router.post("/session-token-verification")
 def verify_token(request: TokenVerificationRequest, db: Session = Depends(get_db_session)):
     """
     Verifica si un token de sesión es válido y devuelve información básica del usuario.
