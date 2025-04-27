@@ -116,15 +116,12 @@ class UserDevices(Base):
         Identificador del usuario dueño del dispositivo.
     fcm_token : str
         Token de Firebase Cloud Messaging.
-    platform : str
-        Plataforma del dispositivo.
     """
     __tablename__ = "user_devices"
 
     user_device_id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
     fcm_token = Column(String(255), nullable=False, unique=True)
-    platform = Column(String(50), nullable=True)
 
     # Relación con User
     user = relationship("Users", back_populates="devices")
