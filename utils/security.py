@@ -1,10 +1,11 @@
+from typing import Optional
 from passlib.context import CryptContext
+from sqlalchemy import select
 from sqlalchemy.orm import Session
-from models.models import User
+from models.models import Users, UserSessions
 import random
 import string
 
-# Cambia el esquema a "argon2"
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
 def hash_password(password: str) -> str:
@@ -46,7 +47,7 @@ def generate_verification_token(length: int=3) -> str:
     return ''.join(random.choices(characters, k=length))
 
 # Función auxiliar para verificar tokens de sesión
-def verify_session_token(session_token: str, db: Session) -> User:
+def verify_session_token(session_token: str, db: Session) -> Optional[Users]:
     """
     Verifica si un token de sesión es válido y devuelve el usuario correspondiente.
 
@@ -55,9 +56,11 @@ def verify_session_token(session_token: str, db: Session) -> User:
         db (Session): La sesión de base de datos.
 
     Returns:
-        User: El objeto usuario correspondiente al token de sesión, o None si no se encuentra.
+        User | None: El objeto usuario correspondiente al token de sesión, o None si no se encuentra o no es válido.
     """
-    user = db.query(User).filter(User.session_token == session_token).first()
-    if not user:
-        return None
-    return user
+    stmt = (
+        select(Users)
+        .join(UserSessions)
+        .where(UserSessions.session_token == session_token)
+    )
+    return db.execute(stmt).scalar_one_or_none()
