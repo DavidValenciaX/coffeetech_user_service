@@ -5,7 +5,7 @@ from sqlalchemy.ext.declarative import declarative_base
 Base = declarative_base()
 
 # Modelo para UserState
-class UserState(Base):
+class UserStates(Base):
     """
     Representa un estado de usuario (activo, verificado, etc).
 
@@ -22,10 +22,10 @@ class UserState(Base):
     name = Column(String(45), nullable=False, unique=True)
 
     # Relación con User
-    users = relationship("User", back_populates="user_state")
+    users = relationship("Users", back_populates="user_state")
 
-# Modelo para Role
-class Role(Base):
+# Modelo para Roles
+class Roles(Base):
     """
     Representa un rol que un usuario puede tener.
 
@@ -45,8 +45,8 @@ class Role(Base):
     permissions = relationship("RolePermission", back_populates="role")
     users = relationship("UserRole", back_populates="role")
 
-# Definición del modelo User
-class User(Base):
+# Definición del modelo Users
+class Users(Base):
     """
     Representa un usuario en el sistema.
 
@@ -75,13 +75,13 @@ class User(Base):
     user_state_id = Column(Integer, ForeignKey("user_states.user_state_id"), nullable=False)
 
     # Relaciones
-    user_state = relationship("UserState", back_populates="users")
-    sessions = relationship("UserSession", back_populates="user", cascade="all, delete-orphan")
-    devices = relationship("UserDevice", back_populates="user", cascade="all, delete-orphan")
+    user_state = relationship("UserStates", back_populates="users")
+    sessions = relationship("UserSessions", back_populates="user", cascade="all, delete-orphan")
+    devices = relationship("UserDevices", back_populates="user", cascade="all, delete-orphan")
     roles = relationship("UserRole", back_populates="user", cascade="all, delete-orphan")
 
-# Modelo para UserSession
-class UserSession(Base):
+# Modelo para UserSessions
+class UserSessions(Base):
     """
     Representa una sesión de usuario.
 
@@ -101,10 +101,10 @@ class UserSession(Base):
     session_token = Column(String(255), nullable=False, unique=True)
 
     # Relación con User
-    user = relationship("User", back_populates="sessions")
+    user = relationship("Users", back_populates="sessions")
 
-# Modelo para UserDevice
-class UserDevice(Base):
+# Modelo para UserDevices
+class UserDevices(Base):
     """
     Representa un dispositivo de usuario.
 
@@ -127,10 +127,10 @@ class UserDevice(Base):
     platform = Column(String(50), nullable=True)
 
     # Relación con User
-    user = relationship("User", back_populates="devices")
+    user = relationship("Users", back_populates="devices")
 
-# Modelo para Permission
-class Permission(Base):
+# Modelo para Permissions
+class Permissions(Base):
     """
     Representa un permiso en el sistema.
 
@@ -170,8 +170,8 @@ class RolePermission(Base):
     permission_id = Column(Integer, ForeignKey('permissions.permission_id'), primary_key=True, nullable=False)
 
     # Relaciones con Role y Permission
-    role = relationship("Role", back_populates="permissions")
-    permission = relationship("Permission", back_populates="roles")
+    role = relationship("Roles", back_populates="permissions")
+    permission = relationship("Permissions", back_populates="roles")
 
 # Modelo para UserRole
 class UserRole(Base):
@@ -194,5 +194,5 @@ class UserRole(Base):
     role_id = Column(Integer, ForeignKey('roles.role_id'), nullable=False)
 
     # Relaciones con User y Role
-    user = relationship("User", back_populates="roles")
-    role = relationship("Role", back_populates="users")
+    user = relationship("Users", back_populates="roles")
+    role = relationship("Roles", back_populates="users")
