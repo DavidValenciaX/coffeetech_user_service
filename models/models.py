@@ -4,6 +4,26 @@ from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
 
+# Modelo para UserState
+class UserState(Base):
+    """
+    Representa un estado de usuario (activo, verificado, etc).
+
+    Atributos:
+    ----------
+    user_state_id : int
+        Identificador único del estado de usuario.
+    name : str
+        Nombre del estado (único).
+    """
+    __tablename__ = 'user_states'
+
+    user_state_id = Column(Integer, primary_key=True)
+    name = Column(String(45), nullable=False, unique=True)
+
+    # Relación con User
+    users = relationship("User", back_populates="user_state")
+
 # Modelo para Role
 class Role(Base):
     """
@@ -16,43 +36,14 @@ class Role(Base):
     name : str
         Nombre del rol (único).
     """
-    __tablename__ = 'role'
+    __tablename__ = 'roles'
 
     role_id = Column(Integer, primary_key=True)
     name = Column(String(255), nullable=False, unique=True)
 
-    # Relación con RolePermission
+    # Relación con RolePermission y UserRole
     permissions = relationship("RolePermission", back_populates="role")
-    user_roles_farms = relationship('UserRoleFarm', back_populates='role')
-
-# Definición del modelo Status
-class Status(Base):
-    """
-    Representa un estado de un registro (ejemplo: activo, inactivo).
-
-    Atributos:
-    ----------
-    status_id : int
-        Identificador único del estado.
-    name : str
-        Nombre del estado.
-    status_type_id : int
-        Relación con el tipo de estado.
-    """
-    __tablename__ = "status"
-
-    status_id = Column(Integer, primary_key=True)
-    name = Column(String(45), nullable=False)
-    status_type_id = Column(Integer, ForeignKey("status_type.status_type_id"), nullable=False)
-
-    # Relación con StatusType
-    status_type = relationship("StatusType", back_populates="statuses")
-
-    # Relación con User
-    users = relationship("User", back_populates="status")
-    
-    # Relación con Notification
-    notifications = relationship("Notification", back_populates="status")
+    users = relationship("UserRole", back_populates="role")
 
 # Definición del modelo User
 class User(Base):
@@ -71,11 +62,7 @@ class User(Base):
         Hash de la contraseña del usuario.
     verification_token : str
         Token de verificación del usuario.
-    session_token : str
-        Token de sesión del usuario.
-    fcm_token : str
-        Token de Firebase Cloud Messaging del usuario.
-    status_id : int
+    user_state_id : int
         Relación con el estado del usuario.
     """
     __tablename__ = "users"
@@ -84,15 +71,63 @@ class User(Base):
     name = Column(String(255), nullable=False)
     email = Column(String(150), nullable=False, unique=True)
     password_hash = Column(String(255), nullable=False)
-    verification_token = Column(String(255), nullable=True)
-    session_token = Column(String(255), nullable=True)
-    fcm_token = Column(String(255), nullable=True)
-    status_id = Column(Integer, ForeignKey("status.status_id"), nullable=False)
+    verification_token = Column(String(255), nullable=True, unique=True)
+    user_state_id = Column(Integer, ForeignKey("user_states.user_state_id"), nullable=False)
 
     # Relaciones
-    status = relationship("Status", back_populates="users")
-    user_roles_farms = relationship('UserRoleFarm', back_populates='user')
-    notifications = relationship("Notification", foreign_keys="[Notification.user_id]", back_populates="user")
+    user_state = relationship("UserState", back_populates="users")
+    sessions = relationship("UserSession", back_populates="user", cascade="all, delete-orphan")
+    devices = relationship("UserDevice", back_populates="user", cascade="all, delete-orphan")
+    roles = relationship("UserRole", back_populates="user", cascade="all, delete-orphan")
+
+# Modelo para UserSession
+class UserSession(Base):
+    """
+    Representa una sesión de usuario.
+
+    Atributos:
+    ----------
+    user_session_id : int
+        Identificador único de la sesión.
+    user_id : int
+        Identificador del usuario dueño de la sesión.
+    session_token : str
+        Token único de sesión.
+    """
+    __tablename__ = "user_sessions"
+
+    user_session_id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
+    session_token = Column(String(255), nullable=False, unique=True)
+
+    # Relación con User
+    user = relationship("User", back_populates="sessions")
+
+# Modelo para UserDevice
+class UserDevice(Base):
+    """
+    Representa un dispositivo de usuario.
+
+    Atributos:
+    ----------
+    user_device_id : int
+        Identificador único del dispositivo.
+    user_id : int
+        Identificador del usuario dueño del dispositivo.
+    fcm_token : str
+        Token de Firebase Cloud Messaging.
+    platform : str
+        Plataforma del dispositivo.
+    """
+    __tablename__ = "user_devices"
+
+    user_device_id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
+    fcm_token = Column(String(255), nullable=False, unique=True)
+    platform = Column(String(50), nullable=True)
+
+    # Relación con User
+    user = relationship("User", back_populates="devices")
 
 # Modelo para Permission
 class Permission(Base):
@@ -108,12 +143,11 @@ class Permission(Base):
     name : str
         Nombre del permiso.
     """
-
-    __tablename__ = 'permission'
+    __tablename__ = 'permissions'
 
     permission_id = Column(Integer, primary_key=True)
     description = Column(String(200), nullable=False)
-    name = Column(String(255), nullable=True, unique=True)
+    name = Column(String(255), nullable=False, unique=True)
 
     # Relación con RolePermission
     roles = relationship("RolePermission", back_populates="permission")
@@ -132,9 +166,33 @@ class RolePermission(Base):
     """
     __tablename__ = 'role_permission'
 
-    role_id = Column(Integer, ForeignKey('role.role_id'), primary_key=True, nullable=False)
-    permission_id = Column(Integer, ForeignKey('permission.permission_id'), primary_key=True, nullable=False)
+    role_id = Column(Integer, ForeignKey('roles.role_id'), primary_key=True, nullable=False)
+    permission_id = Column(Integer, ForeignKey('permissions.permission_id'), primary_key=True, nullable=False)
 
     # Relaciones con Role y Permission
     role = relationship("Role", back_populates="permissions")
     permission = relationship("Permission", back_populates="roles")
+
+# Modelo para UserRole
+class UserRole(Base):
+    """
+    Representa la asignación de un rol a un usuario.
+
+    Atributos:
+    ----------
+    user_role_id : int
+        Identificador único de la asignación.
+    user_id : int
+        Identificador del usuario.
+    role_id : int
+        Identificador del rol.
+    """
+    __tablename__ = 'user_role'
+
+    user_role_id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey('users.user_id'), nullable=False)
+    role_id = Column(Integer, ForeignKey('roles.role_id'), nullable=False)
+
+    # Relaciones con User y Role
+    user = relationship("User", back_populates="roles")
+    role = relationship("Role", back_populates="users")
