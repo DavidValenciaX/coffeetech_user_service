@@ -1,8 +1,6 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from endpoints import auth, utils
-from dataBase import engine
-from models.models import Base
 from utils.logger import setup_logger
 from endpoints.token import router as token_router
 
