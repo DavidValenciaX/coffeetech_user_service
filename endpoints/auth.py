@@ -7,7 +7,7 @@ from utils.security import hash_password, generate_verification_token , verify_p
 from utils.email import send_email
 from utils.response import create_response, session_token_invalid_response
 from dataBase import get_db_session
-from utils.state import get_state
+from utils.state import get_user_state
 import datetime, re, logging, pytz
 
 bogota_tz = pytz.timezone("America/Bogota")
@@ -85,8 +85,6 @@ def register_user(user: UserCreate, db: Session = Depends(get_db_session)):
     if not user.name.strip():
         return create_response("error", "El nombre no puede estar vacío")
     
-    # Validación del correo (ya está validado con EmailStr en Pydantic)
-    
     # Validación de la contraseña
     if user.password != user.passwordConfirmation:
         return create_response("error", "Las contraseñas no coinciden")
@@ -102,10 +100,10 @@ def register_user(user: UserCreate, db: Session = Depends(get_db_session)):
         password_hash = hash_password(user.password)
         verification_token = generate_verification_token(4)
 
-        # Usar get_state para obtener el estado "No Verificado" del tipo "Users"
-        user_registry_state = get_state(db, "No Verificado", "Users")
+        # Usar get_user_state para obtener el estado "No Verificado"
+        user_registry_state = get_user_state(db, "No Verificado")
         if not user_registry_state:
-            return create_response("error", "No se encontró el estado 'No Verificado' para el tipo 'Users'", status_code=400)
+            return create_response("error", "No se encontró el estado 'No Verificado' para usuarios", status_code=400)
 
         # Crear el nuevo usuario con estado "No Verificado"
         new_user = Users(
@@ -143,10 +141,10 @@ def verify_email(request: VerifyTokenRequest, db: Session = Depends(get_db_sessi
         return create_response("error", "Token inválido")
     
     try:
-        # Usar get_state para obtener el estado "Verificado" del tipo "Users"
-        verified_user_state = get_state(db, "Verificado", "Users")
+        # Usar get_user_state para obtener el estado "Verificado"
+        verified_user_state = get_user_state(db, "Verificado")
         if not verified_user_state:
-            return create_response("error", "No se encontró el estado 'Verificado' para el tipo 'Users'", status_code=400)
+            return create_response("error", "No se encontró el estado 'Verificado' para usuarios", status_code=400)
 
         # Actualizar el usuario: marcar como verificado y cambiar el status_id
         user.verification_token = None
@@ -198,7 +196,7 @@ def forgot_password(request: PasswordResetRequest, db: Session = Depends(get_db_
         # Guardar el token y el tiempo de expiración en el diccionario global, sobrescribiendo el token existente si lo hay
         reset_tokens[reset_token] = {
             "expires_at": expiration_time,
-            "email": request.email  # Asociamos el token con el correo
+            "email": request.email
         }
         logger.info("Token de restablecimiento almacenado globalmente para el correo: %s", request.email)
 
@@ -267,7 +265,7 @@ def reset_password(reset: PasswordReset, db: Session = Depends(get_db_session)):
     Returns an error if passwords don't match, the new password is weak,
     or the token is invalid/expired.
     """
-    global reset_tokens  # Aseguramos que estamos usando la variable global
+    global reset_tokens
 
     logger.info("Iniciando el proceso de restablecimiento de contraseña para el token: %s", reset.token)
 
@@ -350,7 +348,7 @@ def login(request: LoginRequest, db: Session = Depends(get_db_session)):
     if not user or not verify_password(request.password, user.password_hash):
         return create_response("error", "Credenciales incorrectas")
 
-    verified_user_state = get_state(db, "Verificado", "Users")
+    verified_user_state = get_user_state(db, "Verificado")
     if not verified_user_state or user.user_state_id != verified_user_state.user_state_id:
         new_verification_token = generate_verification_token(4)
         user.verification_token = new_verification_token
@@ -454,8 +452,8 @@ def logout(request: LogoutRequest, db: Session = Depends(get_db_session)):
         if user:
            device = db.query(UserDevices).filter(UserDevices.user_id == user.user_id).first()
            if device:
-               db.delete(device) # Delete the device record if it exists
-               db.commit() # Commit the deletion of the device record
+               db.delete(device)
+               db.commit()
 
         # Delete the session record
         db.delete(session)
