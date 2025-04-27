@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from models.models import Role
+from models.models import Roles
 from dataBase import get_db_session
 
 router = APIRouter()
@@ -14,11 +14,11 @@ def list_roles(db: Session = Depends(get_db_session)):
     and a list of permissions associated with that role.
     """
     # Consulta los roles y carga los permisos asociados
-    roles = db.query(Role).all()
+    roles = db.query(Roles).all()
 
     # Construir la respuesta con roles y sus permisos
     return {
-        "status": "success",
+        "state": "success",
         "message": "Roles obtenidos correctamente",
         "data": [
             {

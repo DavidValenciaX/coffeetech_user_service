@@ -1,13 +1,10 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from endpoints import auth, utils, invitation, notification, collaborators
+from endpoints import auth, utils
 from dataBase import engine
 from models.models import Base
-import os
 from utils.logger import setup_logger
 from endpoints.token import router as token_router
-
-os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 # Setup logging for the entire application
 logger = setup_logger()
@@ -26,15 +23,6 @@ app.include_router(auth.router, prefix="/auth", tags=["Autenticación"])
 
 # Incluir las rutas de utilidades (roles y unidades de medida)
 app.include_router(utils.router, prefix="/utils", tags=["Utilidades"])
-
-# Incluir las rutas de invitaciones
-app.include_router(invitation.router, prefix="/invitation", tags=["Invitaciones"])
-
-# Incluir las rutas de notificaciones
-app.include_router(notification.router, prefix="/notification", tags=["Notificaciones"])
-
-# Incluir las rutas de colaboradores
-app.include_router(collaborators.router, prefix="/collaborators", tags=["Collaborators"])
 
 # Agregar el router de verificación de tokens
 app.include_router(token_router, prefix="/api/token", tags=["token"])

@@ -40,7 +40,7 @@ class PasswordReset(BaseModel):
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
-    fcm_token: str  # Campo agregado para recibir el token FCM
+    fcm_token: str
 
 class PasswordChange(BaseModel):
     current_password: str
@@ -130,8 +130,6 @@ def register_user(user: UserCreate, db: Session = Depends(get_db_session)):
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Error al registrar usuario o enviar correo: {str(e)}")
-
-
 
 @router.post("/verify")
 def verify_email(request: VerifyTokenRequest, db: Session = Depends(get_db_session)):
@@ -336,15 +334,6 @@ def reset_password(reset: PasswordReset, db: Session = Depends(get_db_session)):
         logger.warning("Token inválido o expirado: %s", reset.token)
         return create_response("error", "Token inválido o expirado")
 
-
-import logging
-
-# Configuración de logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-logger.info("Aplicación iniciada")
-
 @router.post("/login")
 def login(request: LoginRequest, db: Session = Depends(get_db_session)):
     """
@@ -392,8 +381,6 @@ def login(request: LoginRequest, db: Session = Depends(get_db_session)):
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Error durante el inicio de sesión: {str(e)}")
 
-
-# Cambiar contraseña
 @router.put("/change-password")
 def change_password(change: PasswordChange, session_token: str, db: Session = Depends(get_db_session)):
     """
@@ -427,8 +414,6 @@ def change_password(change: PasswordChange, session_token: str, db: Session = De
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Error al cambiar la contraseña: {str(e)}")
 
-
-# Cerrar sesión
 @router.post("/logout")
 def logout(request: LogoutRequest, db: Session = Depends(get_db_session)):
     """
@@ -453,8 +438,6 @@ def logout(request: LogoutRequest, db: Session = Depends(get_db_session)):
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Error durante el cierre de sesión: {str(e)}")
 
-
-# Eliminar cuenta
 @router.delete("/delete-account")
 def delete_account(session_token: str, db: Session = Depends(get_db_session)):
     """

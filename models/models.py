@@ -1,43 +1,8 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, UniqueConstraint
+from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
-from datetime import datetime, timezone
 
 Base = declarative_base()
-
-# Modelo para UserRoleFarm (relación entre usuarios, roles y fincas)
-class UserRoleFarm(Base):
-    """
-    Relación entre usuarios, roles y fincas.
-
-    Atributos:
-    ----------
-    user_role_farm_id : int
-        Identificador único de la relación.
-    role_id : int
-        Identificador del rol (relación con Role).
-    user_id : int
-        Identificador del usuario (relación con User).
-    farm_id : int
-        Identificador de la finca (relación con Farm).
-    status_id : int
-        Estado actual de la relación.
-    """
-    __tablename__ = 'user_role_farm'
-    __table_args__ = (
-        UniqueConstraint('user_id', 'role_id', 'farm_id', name='unique_user_role_farm'),
-    )
-
-    user_role_farm_id = Column(Integer, primary_key=True)
-    role_id = Column(Integer, ForeignKey('role.role_id'), nullable=False)
-    user_id = Column(Integer, ForeignKey('users.user_id'), nullable=False)
-    farm_id = Column(Integer, nullable=False)
-    status_id = Column(Integer, ForeignKey('status.status_id'), nullable=False)
-
-    # Relaciones
-    user = relationship('User', back_populates='user_roles_farms')
-    role = relationship('Role', back_populates='user_roles_farms')
-    status = relationship('Status')
 
 # Modelo para Role
 class Role(Base):
@@ -59,26 +24,6 @@ class Role(Base):
     # Relación con RolePermission
     permissions = relationship("RolePermission", back_populates="role")
     user_roles_farms = relationship('UserRoleFarm', back_populates='role')
-
-# Definición del modelo StatusType
-class StatusType(Base):
-    """
-    Representa los tipos de estado de los registros.
-
-    Atributos:
-    ----------
-    status_type_id : int
-        Identificador único del tipo de estado.
-    name : str
-        Nombre del tipo de estado.
-    """
-    __tablename__ = 'status_type'
-
-    status_type_id = Column(Integer, primary_key=True)
-    name = Column(String(255), nullable=False)
-
-    # Relación con Status
-    statuses = relationship("Status", back_populates="status_type")
 
 # Definición del modelo Status
 class Status(Base):
@@ -193,104 +138,3 @@ class RolePermission(Base):
     # Relaciones con Role y Permission
     role = relationship("Role", back_populates="permissions")
     permission = relationship("Permission", back_populates="roles")
-
-# Modelo para Invitation
-class Invitation(Base):
-    """
-    Representa una invitación para un usuario.
-
-    Atributos:
-    ----------
-    invitation_id : int
-        Identificador único de la invitación.
-    email : str
-        Correo electrónico del invitado.
-    suggested_role_id : int
-        Identificador del rol sugerido (relación con Role).
-    status_id : int
-        Relación con el estado de la invitación.
-    farm_id : int
-        Relación con la finca a la que se invita.
-    inviter_user_id : int
-        Identificador del usuario que envía la invitación.
-    date : datetime
-        Fecha de creación de la invitación.
-    """
-    __tablename__ = 'invitation'
-
-    invitation_id = Column(Integer, primary_key=True)
-    email = Column(String(150), nullable=False)
-    suggested_role_id = Column(Integer, ForeignKey('role.role_id'), nullable=False) # Add this line
-    status_id = Column(Integer, ForeignKey('status.status_id'), nullable=False)
-    farm_id = Column(Integer, nullable=False)
-    inviter_user_id = Column(Integer, ForeignKey('users.user_id'), nullable=False)
-    date = Column(DateTime, default=datetime.now(timezone.utc), nullable=False)
-
-    # Relaciones
-    status = relationship("Status")
-    inviter = relationship("User", foreign_keys=[inviter_user_id])
-    notifications = relationship("Notification", back_populates="invitation")
-    suggested_role = relationship("Role") # Add this relationship
-
-# Modelo para NotificationType
-class NotificationType(Base):
-    """
-    Representa el tipo de notificación.
-
-    Atributos:
-    ----------
-    notification_type_id : int
-        Identificador único del tipo de notificación.
-    name : str
-        Nombre del tipo de notificación.
-    """
-    __tablename__ = 'notification_type'
-
-    notification_type_id = Column(Integer, primary_key=True)
-    name = Column(String(50), nullable=False)
-
-    # Relación con Notification
-    notifications = relationship("Notification", back_populates="notification_type")
-
-# Modelo para Notification
-class Notification(Base):
-    """
-    Representa una notificación en el sistema.
-
-    Atributos:
-    ----------
-    notifications_id : int
-        Identificador único de la notificación.
-    message : str
-        Mensaje de la notificación.
-    date : datetime
-        Fecha de creación de la notificación.
-    user_id : int
-        Identificador del usuario que recibe la notificación.
-    invitation_id : int
-        Identificador de la invitación relacionada, si aplica.
-    notification_type_id : int
-        Tipo de notificación.
-    farm_id : int
-        Identificador de la finca relacionada, si aplica.
-    status_id : int
-        Relación con el estado de la notificación.
-    """
-    __tablename__ = 'notifications'
-
-    notifications_id = Column(Integer, primary_key=True)
-    message = Column(String(255), nullable=True)
-    date = Column(DateTime, default=datetime.now(timezone.utc), nullable=False)
-    user_id = Column(Integer, ForeignKey('users.user_id'), nullable=False)
-    invitation_id = Column(Integer, ForeignKey('invitation.invitation_id'), nullable=True)
-    notification_type_id = Column(Integer, ForeignKey('notification_type.notification_type_id'), nullable=True)
-    farm_id = Column(Integer, nullable=True)
-    status_id = Column(Integer, ForeignKey('status.status_id'), nullable=True)
-
-    # Relaciones
-    user = relationship("User", foreign_keys=[user_id], back_populates="notifications")
-    invitation = relationship("Invitation", back_populates="notifications")
-    notification_type = relationship("NotificationType", back_populates="notifications")
-    
-    # Agregar la relación con Status
-    status = relationship("Status", back_populates="notifications")

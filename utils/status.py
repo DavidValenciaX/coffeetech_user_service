@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from models.models import Status, StatusType
+from models.models import Status
 
 def get_status(db: Session, status_name: str, status_type_name: str) -> Status:
     """

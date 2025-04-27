@@ -1,6 +1,8 @@
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 from models.models import User
+import random
+import string
 
 # Cambia el esquema a "argon2"
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
@@ -29,9 +31,6 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
         bool: Verdadero si las contraseñas coinciden, falso en caso contrario.
     """
     return pwd_context.verify(plain_password, hashed_password)
-
-import random
-import string
 
 def generate_verification_token(length: int=3) -> str:
     """

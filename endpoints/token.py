@@ -1,14 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from models.models import User
 from utils.security import verify_session_token
 from utils.response import create_response
 from dataBase import get_db_session
 from pydantic import BaseModel
 import logging
 
-# Configuración básica de logging
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
