@@ -1,11 +1,7 @@
 import os
 import firebase_admin
 from firebase_admin import credentials, messaging
-from dotenv import load_dotenv
 import logging
-
-# Cargar las variables de entorno que pudieran ser usadas para otras cosas
-load_dotenv()
 
 # Ruta al archivo de credenciales
 service_account_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'serviceAccountKey.json')
