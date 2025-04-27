@@ -1,31 +1,27 @@
 from sqlalchemy.orm import Session
-from models.models import Status
+from models.models import UserStates
+import logging
 
-def get_status(db: Session, status_name: str, status_type_name: str) -> Status:
+logger = logging.getLogger(__name__)
+
+def get_state(db: Session, state_name: str, entity_type: str):
     """
-    Obtiene un objeto Status basado en el nombre y tipo de estado proporcionados.
-
+    Obtiene el estado para diferentes entidades.
+    
     Args:
-        db (Session): La sesión de base de datos activa.
-        status_name (str): El nombre del estado que se desea buscar.
-        status_type_name (str): El nombre del tipo de estado asociado.
-
+        db (Session): Sesión de la base de datos.
+        state_name (str): Nombre del estado a obtener (e.g., "Activo", "Inactivo").
+        entity_type (str): Tipo de entidad (e.g., "Farms", "Users", "Plots").
+        
     Returns:
-        Status: El objeto Status correspondiente, o None si no se encuentra.
+        El objeto de estado si se encuentra, None en caso contrario.
     """
-    # Obtener el status_type correspondiente al nombre dado
-    status_type = db.query(StatusType).filter(StatusType.name == status_type_name).first()
-
-    if not status_type:
-        return None  # Devuelve None si no se encuentra el tipo de estatus
-
-    # Obtener el estado basado en el nombre y el tipo de estatus
-    status = db.query(Status).filter(
-        Status.name == status_name,
-        Status.status_type_id == status_type.status_type_id
-    ).first()
-
-    if not status:
-        return None  # Devuelve None si no se encuentra el estado
-
-    return status
+    try:
+        if entity_type.lower() == "users":
+            return db.query(UserStates).filter(UserStates.name == state_name).first()
+        else:
+            logger.error(f"Tipo de entidad desconocido: {entity_type}")
+            return None
+    except Exception as e:
+        logger.error(f"Error al obtener el estado '{state_name}' para '{entity_type}': {str(e)}")
+        return None
