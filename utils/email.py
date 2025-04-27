@@ -7,7 +7,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-load_dotenv()
+load_dotenv(override=True, encoding='utf-8')
 
 def send_email(email, token, email_type, farm_name=None, owner_name=None, suggested_role=None):
     """
@@ -29,14 +29,16 @@ def send_email(email, token, email_type, farm_name=None, owner_name=None, sugges
 
     smtp_host = "smtp.zoho.com"
     smtp_port = 465
-
+    
+    # Obtener la URL base y el puerto de la aplicación desde variables de entorno
+    app_host = os.getenv("APP_BASE_URL", "http://localhost")
+    app_port = os.getenv("PORT", "8000") # Default to 8000 if not set
+    app_base_url = f"{app_host}:{app_port}"
+    
     # Usar directamente las URLs para el logo en lugar de variables de entorno
     # Primero intentamos con la URL del servidor, y si hay problemas, usamos la URL de Cloudinary como respaldo
-    logo_url = "http://173.212.224.226:8000/static/logo.jpeg"
+    logo_url = f"http://{app_base_url}/static/logo.jpeg"
     fallback_logo_url = "https://res.cloudinary.com/dh58mbonw/image/upload/v1745059649/u4iwdb6nsupnnsqwkvcn.jpg"
-    
-    # Obtener la URL base de la aplicación desde variables de entorno
-    app_base_url = os.getenv("APP_BASE_URL", "http://127.0.0.1:8000") # Default to localhost if not set
 
     # Definir el asunto y el cuerpo del correo basado en el tipo de correo
     if email_type == 'verification':
