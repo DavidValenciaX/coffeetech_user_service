@@ -37,7 +37,7 @@ def send_email(email, token, email_type, farm_name=None, owner_name=None, sugges
     
     # Usar directamente las URLs para el logo en lugar de variables de entorno
     # Primero intentamos con la URL del servidor, y si hay problemas, usamos la URL de Cloudinary como respaldo
-    logo_url = f"http://{app_base_url}/static/logo.jpeg"
+    logo_url = f"{app_base_url}/static/logo.jpeg" 
     fallback_logo_url = "https://res.cloudinary.com/dh58mbonw/image/upload/v1745059649/u4iwdb6nsupnnsqwkvcn.jpg"
 
     # Definir el asunto y el cuerpo del correo basado en el tipo de correo
