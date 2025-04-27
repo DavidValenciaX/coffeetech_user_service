@@ -10,9 +10,6 @@ from endpoints.token import router as token_router
 logger = setup_logger()
 logger.info("Starting CoffeeTech User Service")
 
-# Crear todas las tablas
-Base.metadata.create_all(bind=engine)
-
 app = FastAPI()
 
 # Montar el directorio 'assets' en la ruta '/static'
