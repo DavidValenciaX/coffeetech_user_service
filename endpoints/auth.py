@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
-from models.models import Users, UserSessions, UserDevices
+from models.models import Users, UserSessions
 from utils.security import verify_session_token
 from utils.security import hash_password, generate_verification_token , verify_password
 from utils.email import send_email
@@ -371,16 +371,19 @@ def login(request: LoginRequest, db: Session = Depends(get_db_session)):
         )
         db.add(new_session)
 
-        # Optionally update or create UserDevice record for FCM token
+        # Update or create UserDevice record for FCM token
         # Check if a device with this FCM token already exists for this user
-        device = db.query(UserDevices).filter(UserDevices.user_id == user.user_id, UserDevices.fcm_token == request.fcm_token).first()
+        
+        # get device from notification service
+        # device = get_device_from_notification_service(request.fcm_token)
+        """device = db.query(UserDevices).filter(UserDevices.user_id == user.user_id, UserDevices.fcm_token == request.fcm_token).first()
         if not device:
             # If not, create a new device record
             new_device = UserDevices(
                 user_id=user.user_id,
                 fcm_token=request.fcm_token
             )
-            db.add(new_device)
+            db.add(new_device)"""
         # If device exists, no action needed unless you want to update timestamp etc.
 
         db.commit()
