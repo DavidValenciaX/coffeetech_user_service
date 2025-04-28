@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, Integer, String, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -42,8 +42,8 @@ class Roles(Base):
     name = Column(String(255), nullable=False, unique=True)
 
     # Relación con RolePermission y UserRole
-    permissions = relationship("RolePermission", back_populates="role")
-    users = relationship("UserRole", back_populates="role")
+    permissions = relationship("RolePermission", back_populates="role", cascade="all, delete-orphan")
+    users = relationship("UserRole", back_populates="role", cascade="all, delete-orphan")
 
 # Definición del modelo Users
 class Users(Base):
@@ -77,7 +77,6 @@ class Users(Base):
     # Relaciones
     user_state = relationship("UserStates", back_populates="users")
     sessions = relationship("UserSessions", back_populates="user", cascade="all, delete-orphan")
-    devices = relationship("UserDevices", back_populates="user", cascade="all, delete-orphan")
     roles = relationship("UserRole", back_populates="user", cascade="all, delete-orphan")
 
 # Modelo para UserSessions
@@ -103,29 +102,6 @@ class UserSessions(Base):
     # Relación con User
     user = relationship("Users", back_populates="sessions")
 
-# Modelo para UserDevices
-class UserDevices(Base):
-    """
-    Representa un dispositivo de usuario.
-
-    Atributos:
-    ----------
-    user_device_id : int
-        Identificador único del dispositivo.
-    user_id : int
-        Identificador del usuario dueño del dispositivo.
-    fcm_token : str
-        Token de Firebase Cloud Messaging.
-    """
-    __tablename__ = "user_devices"
-
-    user_device_id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
-    fcm_token = Column(String(255), nullable=False, unique=True)
-
-    # Relación con User
-    user = relationship("Users", back_populates="devices")
-
 # Modelo para Permissions
 class Permissions(Base):
     """
@@ -147,7 +123,7 @@ class Permissions(Base):
     name = Column(String(255), nullable=False, unique=True)
 
     # Relación con RolePermission
-    roles = relationship("RolePermission", back_populates="permission")
+    roles = relationship("RolePermission", back_populates="permission", cascade="all, delete-orphan")
 
 # Modelo para RolePermission
 class RolePermission(Base):
@@ -185,6 +161,7 @@ class UserRole(Base):
         Identificador del rol.
     """
     __tablename__ = 'user_role'
+    __table_args__ = (UniqueConstraint('user_id', 'role_id', name='uq_user_role_user_id_role_id'),)
 
     user_role_id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey('users.user_id'), nullable=False)
