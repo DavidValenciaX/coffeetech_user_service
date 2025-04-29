@@ -20,9 +20,9 @@ app.include_router(auth.router, prefix="/auth", tags=["Autenticación"])
 app.include_router(utils.router, prefix="/utils", tags=["Utilidades"])
 
 # Agregar el router de verificación de tokens
-app.include_router(token_router, prefix="/api/token", tags=["token"])
+app.include_router(token_router, prefix="/user-service", tags=["token"])
 
-@app.get("/")
+@app.get("/", include_in_schema=False)
 def read_root():
     """
     Ruta raíz que retorna un mensaje de bienvenida.
