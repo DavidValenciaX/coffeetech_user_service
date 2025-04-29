@@ -9,6 +9,7 @@ from utils.response import create_response, session_token_invalid_response
 from dataBase import get_db_session
 from utils.state import get_user_state
 import datetime, re, logging, pytz
+from use_cases.login import login_use_case
 
 bogota_tz = pytz.timezone("America/Bogota")
 
@@ -93,8 +94,24 @@ def register_user(user: UserCreate, db: Session = Depends(get_db_session)):
         return create_response("error", "La contraseña debe tener al menos 8 caracteres, incluir una letra mayúscula, una letra minúscula, un número y un carácter especial")
     
     db_user = db.query(Users).filter(Users.email == user.email).first()
+    user_registry_state = get_user_state(db, "No Verificado")
     if db_user:
-        return create_response("error", "El correo ya está registrado")
+        # Si el usuario está como "No Verificado", actualiza sus datos y reenvía el correo
+        if db_user.user_state_id == user_registry_state.user_state_id:
+            try:
+                db_user.name = user.name
+                db_user.password_hash = hash_password(user.password)
+                verification_token = generate_verification_token(4)
+                db_user.verification_token = verification_token
+                db.commit()
+                db.refresh(db_user)
+                send_email(user.email, verification_token, 'verification')
+                return create_response("success", "Hemos enviado un correo electrónico para verificar tu cuenta nuevamente")
+            except Exception as e:
+                db.rollback()
+                raise HTTPException(status_code=500, detail=f"Error al actualizar usuario o enviar correo: {str(e)}")
+        else:
+            return create_response("error", "El correo ya está registrado")
 
     try:
         password_hash = hash_password(user.password)
@@ -343,60 +360,7 @@ def login(request: LoginRequest, db: Session = Depends(get_db_session)):
     If the email is not verified, resends the verification email.
     Returns an error for incorrect credentials or if email verification is required.
     """
-    user = db.query(Users).filter(Users.email == request.email).first()
-
-    if not user or not verify_password(request.password, user.password_hash):
-        return create_response("error", "Credenciales incorrectas")
-
-    verified_user_state = get_user_state(db, "Verificado")
-    if not verified_user_state or user.user_state_id != verified_user_state.user_state_id:
-        new_verification_token = generate_verification_token(4)
-        user.verification_token = new_verification_token
-
-        try:
-            db.commit()
-            send_email(user.email, new_verification_token, 'verification')
-            return create_response("error", "Debes verificar tu correo antes de iniciar sesión")
-        except Exception as e:
-            db.rollback()
-            raise HTTPException(status_code=500, detail=f"Error al enviar el nuevo correo de verificación: {str(e)}")
-
-    try:
-        session_token = generate_verification_token(32)
-        
-        # Create a new UserSession record
-        new_session = UserSessions(
-            user_id=user.user_id,
-            session_token=session_token
-        )
-        db.add(new_session)
-
-        # Update or create UserDevice record for FCM token
-        # Check if a device with this FCM token already exists for this user
-        
-        # get device from notification service
-        # device = get_device_from_notification_service(request.fcm_token)
-        """device = db.query(UserDevices).filter(UserDevices.user_id == user.user_id, UserDevices.fcm_token == request.fcm_token).first()
-        if not device:
-            # If not, create a new device record
-            new_device = UserDevices(
-                user_id=user.user_id,
-                fcm_token=request.fcm_token
-            )
-            db.add(new_device)"""
-        # If device exists, no action needed unless you want to update timestamp etc.
-
-        db.commit()
-
-        # Agrega un log para asegurarte de que el token fue generado
-        logger.info(f"Session token generado para {user.email}: {session_token}")
-
-        return create_response("success", "Inicio de sesión exitoso", {"session_token": session_token, "name": user.name})
-    except Exception as e:
-        db.rollback()
-        # Log the detailed error
-        logger.error(f"Error durante el inicio de sesión para {request.email}: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error durante el inicio de sesión: {str(e)}")
+    return login_use_case(request, db)
 
 @router.put("/change-password")
 def change_password(change: PasswordChange, session_token: str, db: Session = Depends(get_db_session)):
