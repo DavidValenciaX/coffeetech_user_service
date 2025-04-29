@@ -1,4 +1,4 @@
-from fastapi.responses import JSONResponse, ORJSONResponse
+from fastapi.responses import ORJSONResponse
 from datetime import datetime, date, time
 from uuid import UUID
 from typing import Any, Optional
@@ -77,9 +77,9 @@ def create_response(
     )
 
 
-def session_token_invalid_response() -> JSONResponse:
+def session_token_invalid_response() -> ORJSONResponse:
     """
-    Crea una respuesta JSON específica para cuando el token de sesión es inválido.
+    Crea una respuesta para cuando el token de sesión es inválido.
 
     Returns:
         JSONResponse: Respuesta en formato JSON que indica que las credenciales han expirado.
