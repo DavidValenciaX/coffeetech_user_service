@@ -5,7 +5,7 @@ from utils.email import send_email
 from utils.response import create_response
 from utils.state import get_user_state
 import logging
-import requests
+import httpx
 
 logger = logging.getLogger(__name__)
 
@@ -20,9 +20,10 @@ def get_device_from_notification_service(fcm_token, user_id=None):
         payload = {"fcm_token": fcm_token}
         if user_id:
             payload["user_id"] = user_id
-        response = requests.post(f"{NOTIFICATIONS_SERVICE_BASE_URL}/register-device", json=payload, timeout=5)
-        response.raise_for_status()
-        return response.json().get("data")
+        with httpx.Client(timeout=5.0) as client:
+            response = client.post(f"{NOTIFICATIONS_SERVICE_BASE_URL}/register-device", json=payload)
+            response.raise_for_status()
+            return response.json().get("data")
     except Exception as e:
         logger.error(f"Error al comunicarse con el servicio de notificaciones: {str(e)}")
         return None
@@ -56,21 +57,15 @@ def login_use_case(request, db):
         )
         db.add(new_session)
 
-        # Update or create UserDevice record for FCM token
-        # Check if a device with this FCM token already exists for this user
-        
-        # get device from notification service
+        # get device from notification service usando httpx
         device = get_device_from_notification_service(request.fcm_token, user.user_id)
-        # Si no hay device, el servicio de notificaciones lo crea y lo retorna
 
         db.commit()
 
-        # Agrega un log para asegurarte de que el token fue generado
         logger.info(f"Session token generado para {user.email}: {session_token}")
 
         return create_response("success", "Inicio de sesión exitoso", {"session_token": session_token, "name": user.name})
     except Exception as e:
         db.rollback()
-        # Log the detailed error
         logger.error(f"Error durante el inicio de sesión para {request.email}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error durante el inicio de sesión: {str(e)}")
