@@ -47,7 +47,7 @@ jobs:
           docker rm coffeetech-user-service || true
 
           echo "Starting new container..."
-          docker run -d --name coffeetech-user-service --restart always -p 8000:8000 --env-file .env coffeetech-user-service
+          docker run -d --add-host=host.docker.internal:host-gateway --name coffeetech-user-service --restart always -p 8000:8000 --env-file .env coffeetech-user-service
 
           echo "Deployment completed successfully!"
         EOF
