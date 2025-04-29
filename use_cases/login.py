@@ -9,7 +9,7 @@ import requests
 
 logger = logging.getLogger(__name__)
 
-NOTIFICATIONS_SERVICE_URL = "http://localhost:8001"
+NOTIFICATIONS_SERVICE_BASE_URL = "http://localhost:8001/notifications-service"
 
 def get_device_from_notification_service(fcm_token, user_id=None):
     """
@@ -20,7 +20,7 @@ def get_device_from_notification_service(fcm_token, user_id=None):
         payload = {"fcm_token": fcm_token}
         if user_id:
             payload["user_id"] = user_id
-        response = requests.post(f"{NOTIFICATIONS_SERVICE_URL}/notifications-service/register-device", json=payload, timeout=5)
+        response = requests.post(f"{NOTIFICATIONS_SERVICE_BASE_URL}/register-device", json=payload, timeout=5)
         response.raise_for_status()
         return response.json().get("data")
     except Exception as e:
