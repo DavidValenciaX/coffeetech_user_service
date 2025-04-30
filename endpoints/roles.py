@@ -49,7 +49,7 @@ class UserRoleCreateRequest(BaseModel):
     user_id: int
     role_name: str
 
-@router.post("/user-role", status_code=201)
+@router.post("/user-role", status_code=201, include_in_schema=False)
 def create_user_role(request: UserRoleCreateRequest, db: Session = Depends(get_db_session)):
     """
     Crea la relación UserRole (usuario-rol) y retorna el id.
@@ -70,7 +70,7 @@ def create_user_role(request: UserRoleCreateRequest, db: Session = Depends(get_d
         db.refresh(user_role)
     return {"user_role_id": user_role.user_role_id}
 
-@router.get("/user-role/{user_role_id}")
+@router.get("/user-role/{user_role_id}", include_in_schema=False)
 def get_user_role(user_role_id: int, db: Session = Depends(get_db_session)):
     """
     Get role information for a specific UserRole by ID
@@ -88,7 +88,7 @@ def get_user_role(user_role_id: int, db: Session = Depends(get_db_session)):
         "role_name": role.name if role else "Unknown"
     }
 
-@router.get("/user-role/{user_role_id}/permissions")
+@router.get("/user-role/{user_role_id}/permissions", include_in_schema=False)
 def get_user_role_permissions(user_role_id: int, db: Session = Depends(get_db_session)):
     """
     Devuelve la lista de permisos (name, description, permission_id) asociados a un user_role_id.
