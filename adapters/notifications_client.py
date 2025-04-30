@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 NOTIFICATIONS_SERVICE_URL = os.getenv("NOTIFICATIONS_SERVICE_URL", "http://localhost:8001")
 
-def get_device_from_notifications_service(fcm_token, user_id=None):
+def register_device_to_notifications_service(fcm_token, user_id=None):
     """
     Llama al servicio de notificaciones para registrar/obtener el dispositivo por FCM token.
     Si el dispositivo no existe, lo crea.

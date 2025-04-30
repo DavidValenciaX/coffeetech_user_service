@@ -5,7 +5,7 @@ from utils.email import send_email
 from utils.response import create_response
 from utils.state import get_user_state
 import logging
-from adapters.notifications_client import get_device_from_notifications_service
+from adapters.notifications_client import register_device_to_notifications_service
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +38,8 @@ def login(request, db):
         )
         db.add(new_session)
 
-        device = get_device_from_notifications_service(request.fcm_token, user.user_id)
+        device = register_device_to_notifications_service(request.fcm_token, user.user_id)
+        logger.info(f"Dispositivo registrado en notifications service: {device}")
 
         db.commit()
 
