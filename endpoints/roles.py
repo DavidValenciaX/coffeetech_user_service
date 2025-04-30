@@ -69,3 +69,21 @@ def create_user_role(request: UserRoleCreateRequest, db: Session = Depends(get_d
         db.commit()
         db.refresh(user_role)
     return {"user_role_id": user_role.user_role_id}
+
+@router.get("/user-role/{user_role_id}")
+def get_user_role(user_role_id: int, db: Session = Depends(get_db_session)):
+    """
+    Get role information for a specific UserRole by ID
+    """
+    user_role = db.query(UserRole).filter(UserRole.user_role_id == user_role_id).first()
+    if not user_role:
+        raise HTTPException(status_code=404, detail=f"UserRole with ID {user_role_id} not found")
+        
+    role = db.query(Roles).filter(Roles.role_id == user_role.role_id).first()
+    
+    return {
+        "user_role_id": user_role.user_role_id,
+        "user_id": user_role.user_id,
+        "role_id": user_role.role_id,
+        "role_name": role.name if role else "Unknown"
+    }
