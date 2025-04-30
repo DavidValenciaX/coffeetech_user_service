@@ -33,7 +33,7 @@ def get_device_from_notification_service(fcm_token, user_id=None):
         logger.error(f"Error al comunicarse con el servicio de notificaciones: {str(e)}")
         return None
 
-def login_use_case(request, db):
+def login(request, db):
     user = db.query(Users).filter(Users.email == request.email).first()
 
     if not user or not verify_password(request.password, user.password_hash):

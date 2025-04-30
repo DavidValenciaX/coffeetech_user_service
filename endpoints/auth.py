@@ -9,7 +9,7 @@ from utils.response import create_response, session_token_invalid_response
 from dataBase import get_db_session
 from utils.state import get_user_state
 import datetime, re, logging, pytz
-from use_cases.login import login_use_case
+from use_cases.login_use_case import login
 
 bogota_tz = pytz.timezone("America/Bogota")
 
@@ -360,7 +360,7 @@ def login(request: LoginRequest, db: Session = Depends(get_db_session)):
     If the email is not verified, resends the verification email.
     Returns an error for incorrect credentials or if email verification is required.
     """
-    return login_use_case(request, db)
+    return login(request, db)
 
 @router.put("/change-password")
 def change_password(change: PasswordChange, session_token: str, db: Session = Depends(get_db_session)):
