@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from models.models import Roles
+from models.models import Roles, UserRole
 from dataBase import get_db_session
 
 router = APIRouter()
@@ -34,3 +34,12 @@ def list_roles(db: Session = Depends(get_db_session)):
             } for role in roles
         ]
     }
+
+@router.get("/user-role-ids/{user_id}", include_in_schema=False)
+def get_user_role_ids(user_id: int, db: Session = Depends(get_db_session)):
+    """
+    Devuelve una lista de user_role_id asociados a un usuario.
+    """
+    user_roles = db.query(UserRole).filter(UserRole.user_id == user_id).all()
+    user_role_ids = [ur.user_role_id for ur in user_roles]
+    return {"user_role_ids": user_role_ids}

@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from endpoints import auth, utils
+from endpoints import auth, roles
 from utils.logger import setup_logger
 from endpoints.token import router as token_router
 
@@ -17,10 +17,10 @@ app.mount("/static", StaticFiles(directory="assets"), name="static")
 app.include_router(auth.router, prefix="/auth", tags=["Autenticación"])
 
 # Incluir las rutas de utilidades (roles y unidades de medida)
-app.include_router(utils.router, prefix="/utils", tags=["Utilidades"])
+app.include_router(roles.router, prefix="/roles", tags=["Utilidades"])
 
 # Agregar el router de verificación de tokens
-app.include_router(token_router, prefix="/user-service", tags=["token"])
+app.include_router(token_router)
 
 @app.get("/", include_in_schema=False)
 def read_root():
