@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from models.models import Roles, UserRole
+from models.models import Roles, UserRole, Roles
 from dataBase import get_db_session
+from pydantic import BaseModel
 
 router = APIRouter()
 
@@ -43,3 +44,28 @@ def get_user_role_ids(user_id: int, db: Session = Depends(get_db_session)):
     user_roles = db.query(UserRole).filter(UserRole.user_id == user_id).all()
     user_role_ids = [ur.user_role_id for ur in user_roles]
     return {"user_role_ids": user_role_ids}
+
+class UserRoleCreateRequest(BaseModel):
+    user_id: int
+    role_name: str
+
+@router.post("/user-role", status_code=201)
+def create_user_role(request: UserRoleCreateRequest, db: Session = Depends(get_db_session)):
+    """
+    Crea la relación UserRole (usuario-rol) y retorna el id.
+    """
+    # Buscar el rol por nombre
+    role = db.query(Roles).filter(Roles.name == request.role_name).first()
+    if not role:
+        raise HTTPException(status_code=400, detail=f"Rol '{request.role_name}' no encontrado")
+    # Verificar si ya existe la relación
+    user_role = db.query(UserRole).filter(
+        UserRole.user_id == request.user_id,
+        UserRole.role_id == role.role_id
+    ).first()
+    if not user_role:
+        user_role = UserRole(user_id=request.user_id, role_id=role.role_id)
+        db.add(user_role)
+        db.commit()
+        db.refresh(user_role)
+    return {"user_role_id": user_role.user_role_id}
