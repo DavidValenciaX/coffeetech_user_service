@@ -17,7 +17,7 @@ app.mount("/static", StaticFiles(directory="assets"), name="static")
 app.include_router(auth.router, prefix="/auth", tags=["Autenticación"])
 
 # Incluir las rutas de utilidades (roles y unidades de medida)
-app.include_router(roles.router, prefix="/roles", tags=["Utilidades"])
+app.include_router(roles.router, prefix="/roles", tags=["Roles"])
 
 # Agregar el router de verificación de tokens
 app.include_router(token_router)
