@@ -346,7 +346,7 @@ def reset_password(reset: PasswordReset, db: Session = Depends(get_db_session)):
         return create_response("error", "Token inválido o expirado")
 
 @router.post("/login")
-def login(request: LoginRequest, db: Session = Depends(get_db_session)):
+def login_endpoint(request: LoginRequest, db: Session = Depends(get_db_session)):
     """
     Authenticates a user and provides a session token.
 
