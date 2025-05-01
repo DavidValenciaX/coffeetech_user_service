@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from models.models import Roles, UserRole, Roles
+from models.models import Roles, UserRole, Roles, Users
 from dataBase import get_db_session
 from pydantic import BaseModel
+from typing import List
 
 router = APIRouter()
 
@@ -107,3 +108,27 @@ def get_user_role_permissions(user_role_id: int, db: Session = Depends(get_db_se
         } for perm in role.permissions
     ]
     return {"permissions": permissions}
+
+class BulkUserRoleInfoRequest(BaseModel):
+    user_role_ids: List[int]
+
+@router.post("/roles/user-role/bulk-info", include_in_schema=False)
+def bulk_user_role_info(request: BulkUserRoleInfoRequest, db: Session = Depends(get_db_session)):
+    """
+    Devuelve información de usuario y rol para una lista de user_role_ids.
+    """
+    user_roles = db.query(UserRole).filter(UserRole.user_role_id.in_(request.user_role_ids)).all()
+    collaborators = []
+    for ur in user_roles:
+        user = db.query(Users).filter(Users.user_id == ur.user_id).first()
+        role = db.query(Roles).filter(Roles.role_id == ur.role_id).first()
+        if user and role:
+            collaborators.append({
+                "user_role_id": ur.user_role_id,
+                "user_id": user.user_id,
+                "user_name": user.name,
+                "user_email": user.email,
+                "role_id": role.role_id,
+                "role_name": role.name
+            })
+    return {"collaborators": collaborators}
