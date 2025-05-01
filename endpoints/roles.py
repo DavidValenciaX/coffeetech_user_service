@@ -151,3 +151,15 @@ def update_user_role(user_role_id: int, body: dict = Body(...), db: Session = De
     db.commit()
     db.refresh(user_role)
     return {"status": "success", "message": f"Rol actualizado a '{new_role_name}'"}
+
+@router.post("/user-role/{user_role_id}/delete", include_in_schema=False)
+def delete_user_role(user_role_id: int, db: Session = Depends(get_db_session)):
+    """
+    Elimina la relación UserRole (usuario-rol) especificada por user_role_id.
+    """
+    user_role = db.query(UserRole).filter(UserRole.user_role_id == user_role_id).first()
+    if not user_role:
+        raise HTTPException(status_code=404, detail=f"UserRole con ID {user_role_id} no encontrado")
+    db.delete(user_role)
+    db.commit()
+    return {"status": "success", "message": f"UserRole con ID {user_role_id} eliminado correctamente"}
