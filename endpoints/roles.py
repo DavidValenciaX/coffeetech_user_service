@@ -96,10 +96,10 @@ def get_user_role_permissions(user_role_id: int, db: Session = Depends(get_db_se
     """
     user_role = db.query(UserRole).filter(UserRole.user_role_id == user_role_id).first()
     if not user_role:
-        raise HTTPException(status_code=404, detail=f"UserRole with ID {user_role_id} not found")
+        raise HTTPException(status_code=404, detail=f"UserRole con ID {user_role_id} no encontrado")
     role = db.query(Roles).filter(Roles.role_id == user_role.role_id).first()
     if not role:
-        raise HTTPException(status_code=404, detail=f"Role with ID {user_role.role_id} not found")
+        raise HTTPException(status_code=404, detail=f"Role con ID {user_role.role_id} no encontrado")
     permissions = [
         {
             "permission_id": perm.permission.permission_id,
@@ -133,24 +133,42 @@ def bulk_user_role_info(request: BulkUserRoleInfoRequest, db: Session = Depends(
             })
     return {"collaborators": collaborators}
 
+@router.get("/roles/{role_id}/name", include_in_schema=False)
+def get_role_name_by_id(role_id: int, db: Session = Depends(get_db_session)):
+    """
+    Devuelve el nombre de un rol dado su ID.
+    """
+    role = db.query(Roles).filter(Roles.role_id == role_id).first()
+    if not role:
+        raise HTTPException(status_code=404, detail=f"Rol con ID {role_id} no encontrado")
+    return {"role_name": role.name}
+
 @router.post("/user-role/{user_role_id}/update-role", include_in_schema=False)
 def update_user_role(user_role_id: int, body: dict = Body(...), db: Session = Depends(get_db_session)):
     """
-    Actualiza el rol asociado a un user_role_id.
+    Actualiza el rol asociado a un user_role_id usando el ID del nuevo rol.
     """
-    new_role_name = body.get("new_role_name")
-    if not new_role_name:
-        raise HTTPException(status_code=400, detail="El nombre del nuevo rol es requerido")
+    new_role_id = body.get("new_role_id")
+    if not new_role_id:
+        raise HTTPException(status_code=400, detail="El ID del nuevo rol es requerido")
+    
+    # Verificar si el user_role existe
     user_role = db.query(UserRole).filter(UserRole.user_role_id == user_role_id).first()
     if not user_role:
         raise HTTPException(status_code=404, detail=f"UserRole con ID {user_role_id} no encontrado")
-    role = db.query(Roles).filter(Roles.name == new_role_name).first()
+    
+    # Verificar si el nuevo rol existe
+    role = db.query(Roles).filter(Roles.role_id == new_role_id).first()
     if not role:
-        raise HTTPException(status_code=400, detail=f"Rol '{new_role_name}' no encontrado")
+        raise HTTPException(status_code=400, detail=f"Rol con ID {new_role_id} no encontrado")
+    
+    # Actualizar el role_id
     user_role.role_id = role.role_id
     db.commit()
     db.refresh(user_role)
-    return {"status": "success", "message": f"Rol actualizado a '{new_role_name}'"}
+    
+    # Devolver el nombre del rol actualizado para la respuesta
+    return {"status": "success", "message": f"Rol actualizado a '{role.name}'"}
 
 @router.post("/user-role/{user_role_id}/delete", include_in_schema=False)
 def delete_user_role(user_role_id: int, db: Session = Depends(get_db_session)):
