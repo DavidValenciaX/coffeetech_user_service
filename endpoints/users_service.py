@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, Body
+from fastapi import APIRouter, Depends, HTTPException, Body, Query
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import SQLAlchemyError
 from models.models import Roles, UserRole, Roles, Users
 from dataBase import get_db_session
 from pydantic import BaseModel
@@ -204,3 +205,37 @@ def verify_token(request: TokenVerificationRequest, db: Session = Depends(get_db
             email=user.email
         )
     })
+
+class UserVerificationByEmailRequest(BaseModel):
+    email: str
+
+@router.post("/user-verification-by-email", include_in_schema=False)
+def user_verification_by_email(request: UserVerificationByEmailRequest, db: Session = Depends(get_db_session)):
+    """
+    Verifica si existe un usuario con el email dado.
+    Retorna el objeto usuario si existe, None si no.
+    """
+    try:
+        user = db.query(Users).filter(Users.email == request.email).first()
+        if user:
+            return {
+                "status": "success",
+                "data": {
+                    "user": {
+                        "user_id": user.user_id,
+                        "name": user.name,
+                        "email": user.email
+                    }
+                }
+            }
+        else:
+            return {
+                "status": "error",
+                "message": "Usuario no encontrado"
+            }
+    except SQLAlchemyError as e:
+        logger.error(f"Error al verificar usuario por email: {str(e)}")
+        return {
+            "status": "error",
+            "message": "Error interno al consultar el usuario"
+        }
