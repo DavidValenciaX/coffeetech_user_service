@@ -41,10 +41,10 @@ jobs:
           cd /home/projects/coffeetech_services/coffeetech_user_service/
 
           echo "Stopping existing containers (if any)..."
-          docker-compose down || true
+          docker compose down || true
 
           echo "Building and starting with Docker Compose..."
-          docker-compose up -d --build
+          docker compose up -d --build
 
           echo "Cleaning up unused images..."
           docker image prune -f
