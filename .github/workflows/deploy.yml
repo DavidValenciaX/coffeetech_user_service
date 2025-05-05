@@ -40,8 +40,9 @@ jobs:
           set -e
           cd /home/projects/coffeetech_services/coffeetech_user_service/
 
-          echo "Stopping existing containers (if any)..."
+          echo "Stopping and removing existing containers (if any)..."
           docker compose down || true
+          docker rm -f coffeetech-user-service || true
 
           echo "Building and starting with Docker Compose..."
           docker compose up -d --build
