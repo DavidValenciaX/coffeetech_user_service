@@ -239,3 +239,32 @@ def user_verification_by_email(request: UserVerificationByEmailRequest, db: Sess
             "status": "error",
             "message": "Error interno al consultar el usuario"
         }
+
+@router.get("/user/{user_id}", include_in_schema=False)
+def get_user_by_id(user_id: int, db: Session = Depends(get_db_session)):
+    """
+    Retrieves user information by user ID.
+    
+    Args:
+        user_id: ID of the user to retrieve
+        db: Database session
+        
+    Returns:
+        User information if found
+    """
+    try:
+        user = db.query(Users).filter(Users.user_id == user_id).first()
+        if not user:
+            logger.warning(f"Usuario con ID {user_id} no encontrado")
+            return create_response("error", "Usuario no encontrado", status_code=404)
+        
+        return create_response("success", "Usuario encontrado", data={
+            "user": {
+                "user_id": user.user_id,
+                "name": user.name,
+                "email": user.email
+            }
+        })
+    except SQLAlchemyError as e:
+        logger.error(f"Error al consultar usuario por ID: {str(e)}")
+        return create_response("error", "Error interno al consultar el usuario", status_code=500)
