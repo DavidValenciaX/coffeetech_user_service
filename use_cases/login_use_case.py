@@ -1,11 +1,10 @@
 from fastapi import HTTPException
-from models.models import Users, UserSessions
+from models.models import Users, UserSessions, UserDevices
 from utils.security import verify_password, generate_verification_token
 from utils.email import send_email
 from utils.response import create_response
 from utils.state import get_user_state
 import logging
-from adapters.notifications_client import register_device_to_notifications_service
 
 logger = logging.getLogger(__name__)
 
@@ -38,8 +37,22 @@ def login(request, db):
         )
         db.add(new_session)
 
-        device = register_device_to_notifications_service(request.fcm_token, user.user_id)
-        logger.info(f"Dispositivo registrado en notifications service: {device}")
+        # Register or update user device directly in the user_service database
+        if request.fcm_token:
+            existing_device = db.query(UserDevices).filter(
+                UserDevices.user_id == user.user_id,
+                UserDevices.fcm_token == request.fcm_token
+            ).first()
+            
+            if not existing_device:
+                new_device = UserDevices(
+                    user_id=user.user_id,
+                    fcm_token=request.fcm_token
+                )
+                db.add(new_device)
+                logger.info(f"Nuevo dispositivo registrado para usuario {user.user_id}")
+            else:
+                logger.info(f"Dispositivo ya registrado para usuario {user.user_id}")
 
         db.commit()
 

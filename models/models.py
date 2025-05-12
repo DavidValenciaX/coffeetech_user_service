@@ -78,6 +78,7 @@ class Users(Base):
     user_state = relationship("UserStates", back_populates="users")
     sessions = relationship("UserSessions", back_populates="user", cascade="all, delete-orphan")
     roles = relationship("UserRole", back_populates="user", cascade="all, delete-orphan")
+    devices = relationship("UserDevices", back_populates="user", cascade="all, delete-orphan")
 
 # Modelo para UserSessions
 class UserSessions(Base):
@@ -170,3 +171,27 @@ class UserRole(Base):
     # Relaciones con User y Role
     user = relationship("Users", back_populates="roles")
     role = relationship("Roles", back_populates="users")
+
+# Modelo para UserDevices
+class UserDevices(Base):
+    """
+    Representa un dispositivo (token FCM) asociado a un usuario para notificaciones.
+
+    Atributos:
+    ----------
+    user_device_id : int
+        Identificador único del dispositivo.
+    user_id : int
+        Identificador del usuario dueño del dispositivo.
+    fcm_token : str
+        Token de Firebase Cloud Messaging para enviar notificaciones push.
+    """
+    __tablename__ = 'user_devices'
+    __table_args__ = (UniqueConstraint('user_id', 'fcm_token', name='uq_user_fcm_token'),)
+
+    user_device_id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey('users.user_id', ondelete="CASCADE"), nullable=False)
+    fcm_token = Column(String(255), nullable=False)
+
+    # Relación con User
+    user = relationship("Users", back_populates="devices")

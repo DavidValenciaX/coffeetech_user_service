@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Body, Query
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
-from models.models import Roles, UserRole, Roles, Users
+from models.models import Roles, UserRole, Roles, Users, UserDevices
 from dataBase import get_db_session
 from utils.security import verify_session_token
 from utils.response import create_response
@@ -241,3 +241,30 @@ def get_user_by_id(user_id: int, db: Session = Depends(get_db_session)):
     except SQLAlchemyError as e:
         logger.error(f"Error al consultar usuario por ID: {str(e)}")
         return create_response("error", "Error interno al consultar el usuario", status_code=500)
+
+@router.get("/users/{user_id}/devices", include_in_schema=False)
+def get_user_devices(user_id: int, db: Session = Depends(get_db_session)):
+    """
+    Retrieve all devices associated with a user ID
+    
+    Args:
+        user_id (int): The ID of the user whose devices to retrieve
+        db (Session): Database session
+        
+    Returns:
+        List of device objects with user_device_id, user_id, and fcm_token
+    """
+    try:
+        devices = db.query(UserDevices).filter(UserDevices.user_id == user_id).all()
+        device_list = [
+            {
+                "user_device_id": device.user_device_id,
+                "user_id": device.user_id,
+                "fcm_token": device.fcm_token
+            }
+            for device in devices
+        ]
+        return create_response("success", f"Found {len(device_list)} devices", data=device_list)
+    except SQLAlchemyError as e:
+        logger.error(f"Error retrieving devices for user {user_id}: {str(e)}")
+        return create_response("error", "Error al obtener dispositivos del usuario", status_code=500)
