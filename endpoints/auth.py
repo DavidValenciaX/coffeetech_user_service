@@ -1,5 +1,4 @@
 from fastapi import APIRouter, HTTPException, Depends
-from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
 from models.models import Users, UserSessions
 from utils.security import verify_session_token
@@ -8,46 +7,24 @@ from utils.email import send_email
 from utils.response import create_response, session_token_invalid_response
 from dataBase import get_db_session
 from utils.state import get_user_state
-import datetime, re, logging, pytz
 from use_cases.login_use_case import login
+from domain.schemas import (
+    UserCreate,
+    VerifyTokenRequest,
+    PasswordResetRequest,
+    PasswordReset,
+    LoginRequest,
+    PasswordChange,
+    LogoutRequest,
+    UpdateProfile,
+)
+import datetime, re, logging, pytz
 
 bogota_tz = pytz.timezone("America/Bogota")
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
-class UserCreate(BaseModel):
-    name: str
-    email: EmailStr
-    password: str
-    passwordConfirmation: str
-    
-class VerifyTokenRequest(BaseModel):
-    token: str
-
-class PasswordResetRequest(BaseModel):
-    email: EmailStr
-
-
-class PasswordReset(BaseModel):
-    token: str
-    new_password: str
-    confirm_password: str  
-
-class LoginRequest(BaseModel):
-    email: EmailStr
-    password: str
-    fcm_token: str
-
-class PasswordChange(BaseModel):
-    current_password: str
-    new_password: str
-
-class LogoutRequest(BaseModel):
-    session_token: str
-
-class UpdateProfile(BaseModel):
-    new_name: str
 
 reset_tokens = {}
 
@@ -97,7 +74,7 @@ def register_user(user: UserCreate, db: Session = Depends(get_db_session)):
     user_registry_state = get_user_state(db, "No Verificado")
     if db_user:
         # Si el usuario está como "No Verificado", actualiza sus datos y reenvía el correo
-        if db_user.user_state_id == user_registry_state.user_state_id:
+        if (db_user.user_state_id == user_registry_state.user_state_id):
             try:
                 db_user.name = user.name
                 db_user.password_hash = hash_password(user.password)

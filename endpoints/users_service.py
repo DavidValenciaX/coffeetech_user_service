@@ -3,10 +3,15 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 from models.models import Roles, UserRole, Roles, Users
 from dataBase import get_db_session
-from pydantic import BaseModel
-from typing import List
 from utils.security import verify_session_token
 from utils.response import create_response
+from domain.schemas import (
+    UserRoleCreateRequest,
+    BulkUserRoleInfoRequest,
+    TokenVerificationRequest,
+    UserResponse,
+    UserVerificationByEmailRequest,
+)
 import logging
 
 logger = logging.getLogger(__name__)
@@ -21,10 +26,6 @@ def get_user_role_ids(user_id: int, db: Session = Depends(get_db_session)):
     user_roles = db.query(UserRole).filter(UserRole.user_id == user_id).all()
     user_role_ids = [ur.user_role_id for ur in user_roles]
     return {"user_role_ids": user_role_ids}
-
-class UserRoleCreateRequest(BaseModel):
-    user_id: int
-    role_name: str
 
 @router.post("/user-role", status_code=201, include_in_schema=False)
 def create_user_role(request: UserRoleCreateRequest, db: Session = Depends(get_db_session)):
@@ -84,9 +85,6 @@ def get_user_role_permissions(user_role_id: int, db: Session = Depends(get_db_se
         } for perm in role.permissions
     ]
     return {"permissions": permissions}
-
-class BulkUserRoleInfoRequest(BaseModel):
-    user_role_ids: List[int]
 
 @router.post("/user-role/bulk-info", include_in_schema=False)
 def bulk_user_role_info(request: BulkUserRoleInfoRequest, db: Session = Depends(get_db_session)):
@@ -158,28 +156,6 @@ def delete_user_role(user_role_id: int, db: Session = Depends(get_db_session)):
     db.commit()
     return {"status": "success", "message": f"UserRole con ID {user_role_id} eliminado correctamente"}
 
-class TokenVerificationRequest(BaseModel):
-    """
-    Modelo de datos para la verificación de un token de sesión.
-    
-    **Atributos**:
-    - **session_token**: Token de sesión a verificar.
-    """
-    session_token: str
-
-class UserResponse(BaseModel):
-    """
-    Modelo de datos para la respuesta con información del usuario.
-    
-    **Atributos**:
-    - **user_id**: ID único del usuario.
-    - **name**: Nombre del usuario.
-    - **email**: Correo electrónico del usuario.
-    """
-    user_id: int
-    name: str
-    email: str
-
 @router.post("/session-token-verification", include_in_schema=False)
 def verify_token(request: TokenVerificationRequest, db: Session = Depends(get_db_session)):
     """
@@ -205,9 +181,6 @@ def verify_token(request: TokenVerificationRequest, db: Session = Depends(get_db
             email=user.email
         )
     })
-
-class UserVerificationByEmailRequest(BaseModel):
-    email: str
 
 @router.post("/user-verification-by-email", include_in_schema=False)
 def user_verification_by_email(request: UserVerificationByEmailRequest, db: Session = Depends(get_db_session)):
