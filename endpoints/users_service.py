@@ -243,7 +243,7 @@ def get_user_by_id(user_id: int, db: Session = Depends(get_db_session)):
         return create_response("error", "Error interno al consultar el usuario", status_code=500)
 
 @router.get("/users/{user_id}/devices", include_in_schema=False)
-def get_user_devices(user_id: int, db: Session = Depends(get_db_session)):
+def get_user_devices_by_id(user_id: int, db: Session = Depends(get_db_session)):
     """
     Retrieve all devices associated with a user ID
     
