@@ -42,8 +42,8 @@ class Roles(Base):
     name = Column(String(255), nullable=False, unique=True)
 
     # Relación con RolePermission y UserRole
-    permissions = relationship("RolePermission", back_populates="role", cascade="all, delete-orphan")
-    users = relationship("UserRole", back_populates="role", cascade="all, delete-orphan")
+    permissions = relationship("RolePermission", back_populates="role")
+    users = relationship("UserRole", back_populates="role")
 
 # Definición del modelo Users
 class Users(Base):
@@ -76,9 +76,9 @@ class Users(Base):
 
     # Relaciones
     user_state = relationship("UserStates", back_populates="users")
-    sessions = relationship("UserSessions", back_populates="user", cascade="all, delete-orphan")
-    roles = relationship("UserRole", back_populates="user", cascade="all, delete-orphan")
-    devices = relationship("UserDevices", back_populates="user", cascade="all, delete-orphan")
+    sessions = relationship("UserSessions", back_populates="user")
+    roles = relationship("UserRole", back_populates="user")
+    devices = relationship("UserDevices", back_populates="user")
 
 # Modelo para UserSessions
 class UserSessions(Base):
@@ -124,7 +124,7 @@ class Permissions(Base):
     name = Column(String(255), nullable=False, unique=True)
 
     # Relación con RolePermission
-    roles = relationship("RolePermission", back_populates="permission", cascade="all, delete-orphan")
+    roles = relationship("RolePermission", back_populates="permission")
 
 # Modelo para RolePermission
 class RolePermission(Base):
