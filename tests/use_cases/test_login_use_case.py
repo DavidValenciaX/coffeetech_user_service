@@ -12,8 +12,6 @@ from sqlalchemy.exc import OperationalError
 from use_cases.login_use_case import login
 from tests.mockdb import MockDB, Users as MockUsers, UserDevices as MockUserDevices, UserStates as MockUserStates
 
-# Fixtures and test cases will be added below
-
 @pytest.fixture
 def mock_db_session():
     # Instantiate MockDB from mockdb.py
@@ -26,12 +24,15 @@ def mock_db_session():
 def test_login_success(mock_get_user_state, mock_generate_token, mock_verify_password, mock_db_session):
     
     # Arrange
+    # Get the "Verificado" state from the mock database
+    verified_state = mock_db_session.query(MockUserStates).filter(lambda s: s.name == 'Verificado').first()
+    
     mock_user_data = MockUsers(
         user_id=1,
         email='test@example.com',
         password_hash='hashed_password',
         name='Test User',
-        user_state_id=1, # Assuming 1 is 'Verificado'
+        user_state_id=verified_state.user_state_id,
         verification_token=None # Add any other required fields by MockUsers constructor
     )
     mock_db_session.add(mock_user_data)
@@ -80,12 +81,15 @@ def test_login_success(mock_get_user_state, mock_generate_token, mock_verify_pas
 @patch('use_cases.login_use_case.verify_password', return_value=False)
 def test_login_incorrect_credentials(mock_verify_password, mock_db_session):
     # Arrange
+    # Get the "Verificado" state from the mock database 
+    verified_state = mock_db_session.query(MockUserStates).filter(lambda s: s.name == 'Verificado').first()
+    
     mock_user_data = MockUsers(
         user_id=1,
         email='test@example.com',
         password_hash='hashed_password',
         name='Test User',
-        user_state_id=1,
+        user_state_id=verified_state.user_state_id,
         verification_token=None
     )
     mock_db_session.add(mock_user_data)
@@ -125,13 +129,15 @@ def test_login_user_not_found(mock_db_session):
 @patch('use_cases.login_use_case.get_user_state')
 def test_login_email_not_verified(mock_get_user_state, mock_generate_token, mock_send_email, mock_verify_password, mock_db_session):
     # Arrange
-    # User state ID 2 is 'No Verificado' as pre-populated in the fixture
+    # Get the "No Verificado" state from the mock database 
+    unverified_state = mock_db_session.query(MockUserStates).filter(lambda s: s.name == 'No Verificado').first()
+    
     unverified_user_data = MockUsers(
         user_id=1,
         email='unverified@example.com',
         password_hash='hashed_password',
         name='Unverified User',
-        user_state_id=2, # 'No Verificado'
+        user_state_id=unverified_state.user_state_id, # Use actual ID from database
         verification_token='old_token' # Initial token
     )
     mock_db_session.add(unverified_user_data)
@@ -177,13 +183,15 @@ def test_login_email_not_verified(mock_get_user_state, mock_generate_token, mock
 @patch('use_cases.login_use_case.get_user_state', return_value=None) # Simulate 'Verificado' state not found by get_user_state
 def test_login_verified_state_not_found(mock_get_user_state_returns_none, mock_generate_token, mock_send_email, mock_verify_password, mock_db_session):
     # Arrange
-    # The actual user_state_id doesn't strictly matter since get_user_state("Verificado") will return None
+    # Get any state from the mock database (actual state doesn't matter since get_user_state("Verificado") will return None)
+    any_state = mock_db_session.query(MockUserStates).first()
+    
     user_data = MockUsers(
         user_id=1,
         email='test@example.com',
         password_hash='hashed_password',
         name='Test User',
-        user_state_id=1, # Could be any state, outcome is dictated by get_user_state mock
+        user_state_id=any_state.user_state_id, # Could be any state, outcome is dictated by get_user_state mock
         verification_token='old_token'
     )
     mock_db_session.add(user_data)
@@ -213,12 +221,15 @@ def test_login_verified_state_not_found(mock_get_user_state_returns_none, mock_g
 @patch('use_cases.login_use_case.get_user_state')
 def test_login_email_not_verified_send_fail(mock_get_user_state, mock_generate_token, mock_send_email_fails, mock_verify_password, mock_db_session):
     # Arrange
+    # Get the "No Verificado" state from the mock database 
+    unverified_state = mock_db_session.query(MockUserStates).filter(lambda s: s.name == 'No Verificado').first()
+    
     unverified_user_data = MockUsers(
         user_id=1,
         email='unverified@example.com',
         password_hash='hashed_password',
         name='Unverified User',
-        user_state_id=2, # 'No Verificado'
+        user_state_id=unverified_state.user_state_id, # Use actual ID from database
         verification_token='old_token'
     )
     mock_db_session.add(unverified_user_data)
@@ -226,7 +237,7 @@ def test_login_email_not_verified_send_fail(mock_get_user_state, mock_generate_t
     # get_user_state("Verificado") should return the 'Verificado' state object
     verified_user_state_from_db = mock_db_session.query(MockUserStates).filter(lambda s: s.name == "Verificado").first()
     mock_get_user_state.return_value = verified_user_state_from_db 
-    # This setup ensures user.user_state_id (2) != verified_user_state.user_state_id (1) from fixture
+    # This setup ensures user.user_state_id (unverified) != verified_user_state.user_state_id (verified)
 
     login_request = MagicMock()
     login_request.email = 'unverified@example.com'
@@ -253,12 +264,15 @@ def test_login_email_not_verified_send_fail(mock_get_user_state, mock_generate_t
 @patch('use_cases.login_use_case.get_user_state')
 def test_login_success_db_error_on_session(mock_get_user_state, mock_generate_token, mock_verify_password, mock_db_session):
     # Arrange
+    # Get the "Verificado" state from the mock database 
+    verified_state = mock_db_session.query(MockUserStates).filter(lambda s: s.name == 'Verificado').first()
+    
     user_data = MockUsers(
         user_id=1,
         email='test@example.com',
         password_hash='hashed_password',
         name='Test User',
-        user_state_id=1, # 'Verificado'
+        user_state_id=verified_state.user_state_id, # Use actual ID from database
         verification_token=None
     )
     mock_db_session.add(user_data)
