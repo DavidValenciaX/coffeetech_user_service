@@ -10,7 +10,7 @@ import orjson
 from sqlalchemy.exc import OperationalError
 
 from use_cases.login_use_case import login
-from tests.mockdb import MockDB, Users as MockUsers, UserDevices as MockUserDevices, UserStates as MockUserStates
+from tests.mockdb import MockDB, Users, UserDevices, UserStates
 
 @pytest.fixture
 def mock_db_session():
@@ -25,22 +25,20 @@ def test_login_success(mock_get_user_state, mock_generate_token, mock_verify_pas
     
     # Arrange
     # Get the "Verificado" state from the mock database
-    verified_state = mock_db_session.query(MockUserStates).filter(lambda s: s.name == 'Verificado').first()
+    verified_state = mock_db_session.query(UserStates).filter(lambda s: s.name == 'Verificado').first()
     
-    mock_user_data = MockUsers(
+    mock_user_data = Users(
         user_id=1,
         email='test@example.com',
         password_hash='hashed_password',
         name='Test User',
         user_state_id=verified_state.user_state_id,
-        verification_token=None # Add any other required fields by MockUsers constructor
+        verification_token=None
     )
     mock_db_session.add(mock_user_data)
 
-    # If get_user_state is called with a state name, ensure it returns the correct state from MockDB
-    # The fixture already populates 'Verificado' state with id 1
-    mock_verified_state_from_db = mock_db_session.query(MockUserStates).filter(lambda s: s.name == 'Verificado').first()
-    mock_get_user_state.return_value = mock_verified_state_from_db
+    # Configure mock to return the verified state
+    mock_get_user_state.return_value = verified_state
     
     login_request = MagicMock() # Keep MagicMock for the request object itself
     login_request.email = 'test@example.com'
@@ -59,7 +57,7 @@ def test_login_success(mock_get_user_state, mock_generate_token, mock_verify_pas
     
     # Check if UserDevices was added if fcm_token is present
     if login_request.fcm_token:
-        added_device = mock_db_session.query(MockUserDevices).filter(
+        added_device = mock_db_session.query(UserDevices).filter(
             lambda d: d.user_id == mock_user_data.user_id and d.fcm_token == login_request.fcm_token
         ).first()
         assert added_device is not None
@@ -82,9 +80,9 @@ def test_login_success(mock_get_user_state, mock_generate_token, mock_verify_pas
 def test_login_incorrect_credentials(mock_verify_password, mock_db_session):
     # Arrange
     # Get the "Verificado" state from the mock database 
-    verified_state = mock_db_session.query(MockUserStates).filter(lambda s: s.name == 'Verificado').first()
+    verified_state = mock_db_session.query(UserStates).filter(lambda s: s.name == 'Verificado').first()
     
-    mock_user_data = MockUsers(
+    mock_user_data = Users(
         user_id=1,
         email='test@example.com',
         password_hash='hashed_password',
@@ -130,9 +128,9 @@ def test_login_user_not_found(mock_db_session):
 def test_login_email_not_verified(mock_get_user_state, mock_generate_token, mock_send_email, mock_verify_password, mock_db_session):
     # Arrange
     # Get the "No Verificado" state from the mock database 
-    unverified_state = mock_db_session.query(MockUserStates).filter(lambda s: s.name == 'No Verificado').first()
+    unverified_state = mock_db_session.query(UserStates).filter(lambda s: s.name == 'No Verificado').first()
     
-    unverified_user_data = MockUsers(
+    unverified_user_data = Users(
         user_id=1,
         email='unverified@example.com',
         password_hash='hashed_password',
@@ -143,7 +141,7 @@ def test_login_email_not_verified(mock_get_user_state, mock_generate_token, mock
     mock_db_session.add(unverified_user_data)
 
     # get_user_state("Verificado") should return the 'Verificado' state object from MockDB
-    verified_user_state_from_db = mock_db_session.query(MockUserStates).filter(lambda s: s.name == "Verificado").first()
+    verified_user_state_from_db = mock_db_session.query(UserStates).filter(lambda s: s.name == "Verificado").first()
     # get_user_state(ANY OTHER STATE) can return None or the actual state if needed for other logic paths
     # For this test, we only care about the call for "Verificado"
     mock_get_user_state.side_effect = lambda db, state_name: verified_user_state_from_db if state_name == "Verificado" else None
@@ -171,7 +169,7 @@ def test_login_email_not_verified(mock_get_user_state, mock_generate_token, mock
     assert response["message"] == "Debes verificar tu correo antes de iniciar sesión"
     
     # Verify the user's token was updated in the mock DB
-    updated_user = mock_db_session.query(MockUsers).filter(lambda u: u.email == 'unverified@example.com').first()
+    updated_user = mock_db_session.query(Users).filter(lambda u: u.email == 'unverified@example.com').first()
     assert updated_user.verification_token == 'new_token'
     
     mock_send_email.assert_called_once_with('unverified@example.com', 'new_token', 'verification')
@@ -184,9 +182,9 @@ def test_login_email_not_verified(mock_get_user_state, mock_generate_token, mock
 def test_login_verified_state_not_found(mock_get_user_state_returns_none, mock_generate_token, mock_send_email, mock_verify_password, mock_db_session):
     # Arrange
     # Get any state from the mock database (actual state doesn't matter since get_user_state("Verificado") will return None)
-    any_state = mock_db_session.query(MockUserStates).first()
+    any_state = mock_db_session.query(UserStates).first()
     
-    user_data = MockUsers(
+    user_data = Users(
         user_id=1,
         email='test@example.com',
         password_hash='hashed_password',
@@ -209,7 +207,7 @@ def test_login_verified_state_not_found(mock_get_user_state_returns_none, mock_g
     assert response["status"] == "error"
     assert response["message"] == "Debes verificar tu correo antes de iniciar sesión"
     
-    updated_user = mock_db_session.query(MockUsers).filter(lambda u: u.email == 'test@example.com').first()
+    updated_user = mock_db_session.query(Users).filter(lambda u: u.email == 'test@example.com').first()
     assert updated_user.verification_token == 'new_token'
 
     mock_send_email.assert_called_once_with('test@example.com', 'new_token', 'verification')
@@ -222,9 +220,9 @@ def test_login_verified_state_not_found(mock_get_user_state_returns_none, mock_g
 def test_login_email_not_verified_send_fail(mock_get_user_state, mock_generate_token, mock_send_email_fails, mock_verify_password, mock_db_session):
     # Arrange
     # Get the "No Verificado" state from the mock database 
-    unverified_state = mock_db_session.query(MockUserStates).filter(lambda s: s.name == 'No Verificado').first()
+    unverified_state = mock_db_session.query(UserStates).filter(lambda s: s.name == 'No Verificado').first()
     
-    unverified_user_data = MockUsers(
+    unverified_user_data = Users(
         user_id=1,
         email='unverified@example.com',
         password_hash='hashed_password',
@@ -235,7 +233,7 @@ def test_login_email_not_verified_send_fail(mock_get_user_state, mock_generate_t
     mock_db_session.add(unverified_user_data)
 
     # get_user_state("Verificado") should return the 'Verificado' state object
-    verified_user_state_from_db = mock_db_session.query(MockUserStates).filter(lambda s: s.name == "Verificado").first()
+    verified_user_state_from_db = mock_db_session.query(UserStates).filter(lambda s: s.name == "Verificado").first()
     mock_get_user_state.return_value = verified_user_state_from_db 
     # This setup ensures user.user_state_id (unverified) != verified_user_state.user_state_id (verified)
 
@@ -251,7 +249,7 @@ def test_login_email_not_verified_send_fail(mock_get_user_state, mock_generate_t
     assert "Error al enviar el nuevo correo de verificación" in str(exc_info.value.detail)
     
     # Token should still be set on the user object in the mock DB
-    updated_user = mock_db_session.query(MockUsers).filter(lambda u: u.email == 'unverified@example.com').first()
+    updated_user = mock_db_session.query(Users).filter(lambda u: u.email == 'unverified@example.com').first()
     assert updated_user.verification_token == 'new_token' 
     
     mock_send_email_fails.assert_called_once_with('unverified@example.com', 'new_token', 'verification')
@@ -265,9 +263,9 @@ def test_login_email_not_verified_send_fail(mock_get_user_state, mock_generate_t
 def test_login_success_db_error_on_session(mock_get_user_state, mock_generate_token, mock_verify_password, mock_db_session):
     # Arrange
     # Get the "Verificado" state from the mock database 
-    verified_state = mock_db_session.query(MockUserStates).filter(lambda s: s.name == 'Verificado').first()
+    verified_state = mock_db_session.query(UserStates).filter(lambda s: s.name == 'Verificado').first()
     
-    user_data = MockUsers(
+    user_data = Users(
         user_id=1,
         email='test@example.com',
         password_hash='hashed_password',
@@ -277,7 +275,7 @@ def test_login_success_db_error_on_session(mock_get_user_state, mock_generate_to
     )
     mock_db_session.add(user_data)
 
-    verified_user_state_from_db = mock_db_session.query(MockUserStates).filter(lambda s: s.name == "Verificado").first()
+    verified_user_state_from_db = mock_db_session.query(UserStates).filter(lambda s: s.name == "Verificado").first()
     mock_get_user_state.return_value = verified_user_state_from_db
 
     # Simulate DB error during commit
