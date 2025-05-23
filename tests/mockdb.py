@@ -1,5 +1,6 @@
 import sys
 import os
+from sqlalchemy.sql.elements import BinaryExpression
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 
@@ -18,7 +19,7 @@ class Users:
         self.user_state_id = user_state_id
 
 class UserSessions:
-    def __init__(self, user_session_id, user_id, session_token):
+    def __init__(self, user_session_id=None, user_id=None, session_token=None):
         self.user_session_id = user_session_id
         self.user_id = user_id
         self.session_token = session_token
@@ -59,8 +60,56 @@ class MockQuery:
         self._filters = []
 
     def filter(self, *args):
-        self._filters.extend(args)
+        for arg in args:
+            if callable(arg):
+                # It's a lambda function, use as is
+                self._filters.append(arg)
+            elif isinstance(arg, BinaryExpression):
+                # Convert SQLAlchemy BinaryExpression to a callable function
+                filter_func = self._convert_binary_expression_to_function(arg)
+                self._filters.append(filter_func)
+            else:
+                # For other types, try to make them callable
+                self._filters.append(lambda obj, condition=arg: condition)
         return self
+
+    def _convert_binary_expression_to_function(self, expr):
+        """Convert a SQLAlchemy BinaryExpression to a callable function"""
+        left = expr.left
+        right = expr.right
+        operator = expr.operator
+        
+        # Get the column name from the left side (e.g., Users.email -> 'email')
+        if hasattr(left, 'name'):
+            column_name = left.name
+        elif hasattr(left, 'key'):
+            column_name = left.key
+        else:
+            # Fallback - try to extract from string representation
+            column_name = str(left).split('.')[-1]
+        
+        # Get the value from the right side
+        if hasattr(right, 'value'):
+            compare_value = right.value
+        else:
+            compare_value = right
+        
+        # Create appropriate comparison function based on operator
+        if operator.__name__ == 'eq':  # ==
+            return lambda obj: getattr(obj, column_name, None) == compare_value
+        elif operator.__name__ == 'ne':  # !=
+            return lambda obj: getattr(obj, column_name, None) != compare_value
+        elif operator.__name__ == 'lt':  # <
+            return lambda obj: getattr(obj, column_name, None) < compare_value
+        elif operator.__name__ == 'le':  # <=
+            return lambda obj: getattr(obj, column_name, None) <= compare_value
+        elif operator.__name__ == 'gt':  # >
+            return lambda obj: getattr(obj, column_name, None) > compare_value
+        elif operator.__name__ == 'ge':  # >=
+            return lambda obj: getattr(obj, column_name, None) >= compare_value
+        else:
+            # Default to equality comparison
+            return lambda obj: getattr(obj, column_name, None) == compare_value
 
     def all(self):
         result = []
@@ -87,6 +136,17 @@ class MockDB:
         self.user_roles = []
         self.committed = False
         self.rolled_back = False
+
+        # Initialize common user states
+        user_states_data = [
+            (1, 'Verificado'),
+            (2, 'No Verificado'),
+            (3, 'Pendiente')
+        ]
+        
+        for state_id, name in user_states_data:
+            state = UserStates(user_state_id=state_id, name=name)
+            self.user_states.append(state)
 
         # Data from test_roles.py
         permission_data = [
@@ -162,21 +222,21 @@ class MockDB:
         return MockQuery([])
 
     def add(self, obj):
-        if isinstance(obj, Users):
+        if obj.__class__.__name__ == "Users":
             self.users.append(obj)
-        elif isinstance(obj, UserStates):
+        elif obj.__class__.__name__ == "UserStates":
             self.user_states.append(obj)
-        elif isinstance(obj, UserSessions):
+        elif obj.__class__.__name__ == "UserSessions":
             self.user_sessions.append(obj)
-        elif isinstance(obj, UserDevices):
+        elif obj.__class__.__name__ == "UserDevices":
             self.user_devices.append(obj)
-        elif isinstance(obj, Roles):
+        elif obj.__class__.__name__ == "Roles":
             self.roles.append(obj)
-        elif isinstance(obj, Permissions):
+        elif obj.__class__.__name__ == "Permissions":
             self.permissions.append(obj)
-        elif isinstance(obj, RolePermission):
+        elif obj.__class__.__name__ == "RolePermission":
             self.role_permissions.append(obj)
-        elif isinstance(obj, UserRole):
+        elif obj.__class__.__name__ == "UserRole":
             self.user_roles.append(obj)
 
     def commit(self):
