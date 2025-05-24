@@ -8,6 +8,7 @@ from utils.response import create_response, session_token_invalid_response
 from dataBase import get_db_session
 from utils.state import get_user_state
 from use_cases.login_use_case import login
+from use_cases.register_user_use_case import register_user, validate_password_strength
 from domain.schemas import (
     UserCreate,
     VerifyTokenRequest,
@@ -28,25 +29,9 @@ router = APIRouter()
 
 reset_tokens = {}
 
-# Función auxiliar para validar la contraseña
-def validate_password_strength(password: str) -> bool:
-    # La contraseña debe tener al menos:
-    # - 8 caracteres
-    # - 1 letra mayúscula
-    # - 1 letra minúscula
-    # - 1 número
-    # - 1 carácter especial
-    if (len(password) >= 8 and
-        re.search(r'[A-Z]', password) and
-        re.search(r'[a-z]', password) and
-        re.search(r'\d', password) and
-        re.search(r'[\W_]', password)):
-        return True
-    return False
-
 # Modificación del endpoint de registro
 @router.post("/register")
-def register_user(user: UserCreate, db: Session = Depends(get_db_session)):
+def register_user_endpoint(user: UserCreate, db: Session = Depends(get_db_session)):
     """
     Registers a new user in the system.
 
@@ -59,65 +44,7 @@ def register_user(user: UserCreate, db: Session = Depends(get_db_session)):
     Returns an error if the email is already registered, passwords don't match,
     or the password doesn't meet strength requirements.
     """
-    # Validación del nombre (no puede estar vacío)
-    if not user.name.strip():
-        return create_response("error", "El nombre no puede estar vacío")
-    
-    # Validación de la contraseña
-    if user.password != user.passwordConfirmation:
-        return create_response("error", "Las contraseñas no coinciden")
-    
-    if not validate_password_strength(user.password):
-        return create_response("error", "La contraseña debe tener al menos 8 caracteres, incluir una letra mayúscula, una letra minúscula, un número y un carácter especial")
-    
-    db_user = db.query(Users).filter(Users.email == user.email).first()
-    user_registry_state = get_user_state(db, "No Verificado")
-    if db_user:
-        # Si el usuario está como "No Verificado", actualiza sus datos y reenvía el correo
-        if (db_user.user_state_id == user_registry_state.user_state_id):
-            try:
-                db_user.name = user.name
-                db_user.password_hash = hash_password(user.password)
-                verification_token = generate_verification_token(4)
-                db_user.verification_token = verification_token
-                db.commit()
-                db.refresh(db_user)
-                send_email(user.email, verification_token, 'verification')
-                return create_response("success", "Hemos enviado un correo electrónico para verificar tu cuenta nuevamente")
-            except Exception as e:
-                db.rollback()
-                raise HTTPException(status_code=500, detail=f"Error al actualizar usuario o enviar correo: {str(e)}")
-        else:
-            return create_response("error", "El correo ya está registrado")
-
-    try:
-        password_hash = hash_password(user.password)
-        verification_token = generate_verification_token(4)
-
-        # Usar get_user_state para obtener el estado "No Verificado"
-        user_registry_state = get_user_state(db, "No Verificado")
-        if not user_registry_state:
-            return create_response("error", "No se encontró el estado 'No Verificado' para usuarios", status_code=400)
-
-        # Crear el nuevo usuario con estado "No Verificado"
-        new_user = Users(
-            name=user.name,
-            email=user.email,
-            password_hash=password_hash,
-            verification_token=verification_token,
-            user_state_id=user_registry_state.user_state_id
-        )
-
-        db.add(new_user)
-        db.commit()
-        db.refresh(new_user)
-
-        send_email(user.email, verification_token, 'verification')
-
-        return create_response("success", "Hemos enviado un correo electrónico para verificar tu cuenta")
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=500, detail=f"Error al registrar usuario o enviar correo: {str(e)}")
+    return register_user(user, db)
 
 @router.post("/verify-email") # Renamed from /verify
 def verify_email(request: VerifyTokenRequest, db: Session = Depends(get_db_session)):
