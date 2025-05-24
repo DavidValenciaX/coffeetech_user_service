@@ -18,8 +18,8 @@ def mock_db_session():
     db = MockDB()
     return db
 
-@patch('use_cases.login_use_case.verify_password', return_value=True)
-@patch('use_cases.login_use_case.generate_verification_token', return_value='test_session_token')
+@patch('use_cases.login_use_case.verify_password')
+@patch('use_cases.login_use_case.generate_verification_token')
 @patch('use_cases.login_use_case.get_user_state')
 def test_login_success(mock_get_user_state, mock_generate_token, mock_verify_password, mock_db_session):
     
@@ -37,8 +37,10 @@ def test_login_success(mock_get_user_state, mock_generate_token, mock_verify_pas
     )
     mock_db_session.add(mock_user_data)
 
-    # Configure mock to return the verified state
+    # Configure mocks to return the verified state, generate a token, and verify the password
     mock_get_user_state.return_value = verified_state
+    mock_generate_token.return_value = 'test_session_token'
+    mock_verify_password.return_value = True
     
     login_request = MagicMock()
     login_request.email = 'test@example.com'
