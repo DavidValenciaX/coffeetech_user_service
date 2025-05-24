@@ -264,7 +264,6 @@ def test_login_email_not_verified_send_fail(mock_get_user_state, mock_generate_t
 @patch('use_cases.login_use_case.get_user_state')
 def test_login_success_db_error_on_session(mock_get_user_state, mock_generate_token, mock_verify_password, mock_db_session):
     # Arrange
-    # Get the "Verificado" state from the mock database 
     verified_state = mock_db_session.query(UserStates).filter(lambda s: s.name == 'Verificado').first()
     
     user_data = Users(
@@ -277,22 +276,12 @@ def test_login_success_db_error_on_session(mock_get_user_state, mock_generate_to
     )
     mock_db_session.add(user_data)
 
-    # Configure mocks to return the verified state, generate a token, and verify the password
     mock_get_user_state.return_value = verified_state
     mock_generate_token.return_value = 'test_session_token'
     mock_verify_password.return_value = True
     
-    # Simulate DB error during commit
-    # To do this with MockDB, we can patch its commit method for this specific test
-    original_commit = mock_db_session.commit 
-    def commit_side_effect():
-        # Ensure original_commit is called to set mock_db_session.committed = True before raising error
-        original_commit() 
-        raise OperationalError("DB commit failed", None, None)
-    
-    mock_db_session.commit = MagicMock(side_effect=commit_side_effect, name="mock_commit_that_fails")
-    # We also need to ensure rollback can be called and tracked
-    mock_db_session.rollback = MagicMock(name="mock_rollback")
+    # commit fails
+    mock_db_session.set_commit_fail(True, "DB commit failed")
 
     login_request = MagicMock()
     login_request.email = 'test@example.com'
@@ -306,17 +295,5 @@ def test_login_success_db_error_on_session(mock_get_user_state, mock_generate_to
     # Assert
     assert exc_info.value.status_code == 500
     assert "Error durante el inicio de sesión" in str(exc_info.value.detail)
-    
-    # Check that add was called (MockDB doesn't track calls to add directly in a list like MagicMock)
-    # We can infer add was called by checking if the device exists, as commit is mocked to fail after adding
-    # Or, more directly, the use case should attempt to add UserDevices and UserSessions
-    # The login use case adds a UserSession and a UserDevice (if fcm_token is present)
-    # We can check the contents of mock_db_session.user_devices and mock_db_session.user_sessions before commit fails.
-    # This requires UserSessions to be defined in MockDB and login_use_case to use it.
-    # For now, let's assume the critical part is commit and rollback behavior.
-
-    mock_db_session.commit.assert_called_once() # The failing commit was called
-    mock_db_session.rollback.assert_called_once() # Rollback was called due to the exception
-
-    # Restore original commit if necessary for other tests or cleanup, though pytest fixtures usually isolate this.
-    # mock_db_session.commit = original_commit # Usually not needed due to fixture scoping
+    assert mock_db_session.committed
+    assert mock_db_session.rolled_back

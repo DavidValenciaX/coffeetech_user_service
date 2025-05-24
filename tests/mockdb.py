@@ -136,6 +136,12 @@ class MockDB:
         self.user_roles = []
         self.committed = False
         self.rolled_back = False
+        
+        # Agregar configuración para simular fallos
+        self.should_commit_fail = False
+        self.should_rollback_fail = False
+        self.commit_error_message = "DB commit failed"
+        self.rollback_error_message = "DB rollback failed"
 
         # Initialize common user states
         user_states_data = [
@@ -240,7 +246,28 @@ class MockDB:
             self.user_roles.append(obj)
 
     def commit(self):
+        if self.should_commit_fail:
+            # Marcar como committed antes de fallar (comportamiento real)
+            self.committed = True
+            from sqlalchemy.exc import OperationalError
+            raise OperationalError(self.commit_error_message, None, None)
         self.committed = True
 
     def rollback(self):
+        if self.should_rollback_fail:
+            from sqlalchemy.exc import OperationalError
+            raise OperationalError(self.rollback_error_message, None, None)
         self.rolled_back = True
+    
+    # Métodos de configuración para tests
+    def set_commit_fail(self, should_fail=True, error_message="DB commit failed"):
+        self.should_commit_fail = should_fail
+        self.commit_error_message = error_message
+    
+    def set_rollback_fail(self, should_fail=True, error_message="DB rollback failed"):
+        self.should_rollback_fail = should_fail
+        self.rollback_error_message = error_message
+    
+    def reset_failure_modes(self):
+        self.should_commit_fail = False
+        self.should_rollback_fail = False
