@@ -9,10 +9,12 @@ presentation layer (endpoints).
 from .login_use_case import login
 from .list_roles_use_case import list_roles
 from .register_user_use_case import register_user, validate_password_strength
+from .verify_email_use_case import verify_email
 
 __all__ = [
     "login",
     "list_roles",
     "register_user",
-    "validate_password_strength"
+    "validate_password_strength",
+    "verify_email"
 ] 

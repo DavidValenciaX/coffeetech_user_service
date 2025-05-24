@@ -6,9 +6,9 @@ from utils.security import hash_password, generate_verification_token , verify_p
 from utils.email import send_email
 from utils.response import create_response, session_token_invalid_response
 from dataBase import get_db_session
-from utils.state import get_user_state
 from use_cases.login_use_case import login
 from use_cases.register_user_use_case import register_user, validate_password_strength
+from use_cases.verify_email_use_case import verify_email
 from domain.schemas import (
     UserCreate,
     VerifyTokenRequest,
@@ -29,7 +29,6 @@ router = APIRouter()
 
 reset_tokens = {}
 
-# Modificación del endpoint de registro
 @router.post("/register")
 def register_user_endpoint(user: UserCreate, db: Session = Depends(get_db_session)):
     """
@@ -46,8 +45,8 @@ def register_user_endpoint(user: UserCreate, db: Session = Depends(get_db_sessio
     """
     return register_user(user, db)
 
-@router.post("/verify-email") # Renamed from /verify
-def verify_email(request: VerifyTokenRequest, db: Session = Depends(get_db_session)):
+@router.post("/verify-email")
+def verify_email_endpoint(request: VerifyTokenRequest, db: Session = Depends(get_db_session)):
     """
     Verifies a user's email address using a provided token.
 
@@ -56,29 +55,7 @@ def verify_email(request: VerifyTokenRequest, db: Session = Depends(get_db_sessi
     Updates the user's state to "Verified" if the token is valid.
     Returns an error if the token is invalid or expired.
     """
-    user = db.query(Users).filter(Users.verification_token == request.token).first()
-    
-    if not user:
-        return create_response("error", "Token inválido")
-    
-    try:
-        # Usar get_user_state para obtener el estado "Verificado"
-        verified_user_state = get_user_state(db, "Verificado")
-        if not verified_user_state:
-            return create_response("error", "No se encontró el estado 'Verificado' para usuarios", status_code=400)
-
-        # Actualizar el usuario: marcar como verificado y cambiar el status_id
-        user.verification_token = None
-        user.user_state_id = verified_user_state.user_state_id
-        
-        # Guardar los cambios en la base de datos
-        db.commit()
-        
-        return create_response("success", "Correo electrónico verificado exitosamente")
-    
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=500, detail=f"Error al verificar el correo: {str(e)}")
+    return verify_email(request.token, db)
 
 @router.post("/forgot-password")
 def forgot_password(request: PasswordResetRequest, db: Session = Depends(get_db_session)):
