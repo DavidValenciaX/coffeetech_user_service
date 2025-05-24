@@ -11,6 +11,7 @@ from use_cases.verify_reset_token_use_case import verify_reset_token
 from use_cases.reset_password_use_case import reset_password
 from use_cases.change_password_use_case import change_password as change_password_use_case
 from use_cases.logout_use_case import logout as logout_use_case
+from use_cases.delete_account_use_case import delete_account as delete_account_use_case
 from domain.schemas import (
     UserCreate,
     VerifyTokenRequest,
@@ -158,17 +159,7 @@ def delete_account(session_token: str, db: Session = Depends(get_db_session)):
     from the database.
     Returns an error if the session token is invalid.
     """
-    user = verify_session_token(session_token, db)
-    if not user:
-        return session_token_invalid_response()
-
-    try:
-        db.delete(user)
-        db.commit()
-        return create_response("success", "Cuenta eliminada exitosa")
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=500, detail=f"Error deleting account: {str(e)}")
+    return delete_account_use_case(session_token, db)
 
 @router.post("/update-profile")
 def update_profile(profile: UpdateProfile, session_token: str, db: Session = Depends(get_db_session)):
