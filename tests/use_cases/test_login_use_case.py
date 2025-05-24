@@ -10,7 +10,7 @@ import orjson
 from sqlalchemy.exc import OperationalError
 
 from use_cases.login_use_case import login
-from tests.mockdb import MockDB, Users, UserDevices, UserStates
+from tests.mockdb import MockDB, UserSessions, Users, UserDevices, UserStates
 
 @pytest.fixture
 def mock_db_session():
@@ -40,7 +40,7 @@ def test_login_success(mock_get_user_state, mock_generate_token, mock_verify_pas
     # Configure mock to return the verified state
     mock_get_user_state.return_value = verified_state
     
-    login_request = MagicMock() # Keep MagicMock for the request object itself
+    login_request = MagicMock()
     login_request.email = 'test@example.com'
     login_request.password = 'password123'
     login_request.fcm_token = 'test_fcm_token'
@@ -63,16 +63,13 @@ def test_login_success(mock_get_user_state, mock_generate_token, mock_verify_pas
         assert added_device is not None
         assert added_device.fcm_token == login_request.fcm_token
 
-    # Check if a UserSession was added (this check needs to be adapted based on how UserSessions are stored in MockDB)
-    # Assuming UserSessions are added to mock_db_session.user_sessions list or similar
-    # For now, we can check if a session token related to the user was generated
-    # This depends on the actual implementation of login adding a UserSession object
-    # If UserSessions are added to the db, you'd query for it like UserDevices
-    # For example:
-    # added_session = mock_db_session.query(UserSessions).filter(lambda s: s.user_id == mock_user_data.user_id).first()
-    # assert added_session is not None
-    # assert added_session.session_token == "test_session_token"
-    # Since UserSessions are not directly part of login response data but are an internal state, this might be harder to assert without knowing UserSession model in MockDB
+    # Check if a UserSession was added
+    added_session = mock_db_session.query(UserSessions).filter(
+        lambda s: s.user_id == mock_user_data.user_id and s.session_token == "test_session_token"
+    ).first()
+    assert added_session is not None
+    assert added_session.session_token == "test_session_token"
+    assert added_session.user_id == mock_user_data.user_id
 
     assert mock_db_session.committed # Check if commit was called
 
