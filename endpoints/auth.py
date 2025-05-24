@@ -9,6 +9,7 @@ from dataBase import get_db_session
 from use_cases.login_use_case import login
 from use_cases.register_user_use_case import register_user, validate_password_strength
 from use_cases.verify_email_use_case import verify_email
+from use_cases.forgot_password_use_case import forgot_password, reset_tokens
 from domain.schemas import (
     UserCreate,
     VerifyTokenRequest,
@@ -26,8 +27,6 @@ bogota_tz = pytz.timezone("America/Bogota")
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
-
-reset_tokens = {}
 
 @router.post("/register")
 def register_user_endpoint(user: UserCreate, db: Session = Depends(get_db_session)):
@@ -58,7 +57,7 @@ def verify_email_endpoint(request: VerifyTokenRequest, db: Session = Depends(get
     return verify_email(request.token, db)
 
 @router.post("/forgot-password")
-def forgot_password(request: PasswordResetRequest, db: Session = Depends(get_db_session)):
+def forgot_password_endpoint(request: PasswordResetRequest, db: Session = Depends(get_db_session)):
     """
     Initiates the password reset process for a user.
 
@@ -68,51 +67,7 @@ def forgot_password(request: PasswordResetRequest, db: Session = Depends(get_db_
     to the user's email address.
     Returns an error if the email is not found in the database.
     """
-    global reset_tokens
-
-    logger.info("Iniciando el proceso de restablecimiento de contraseña para el correo: %s", request.email)
-    
-    user = db.query(Users).filter(Users.email == request.email).first()
-    
-    if not user:
-        logger.warning("Correo no encontrado: %s", request.email)
-        return create_response("error", "Correo no encontrado")
-
-    try:
-        # Genera un token único para restablecer la contraseña
-        reset_token = generate_verification_token(4)
-        logger.info("Token de restablecimiento generado: %s", reset_token)
-
-        # Configura el tiempo de expiración para 15 minutos en el futuro
-        expiration_time = datetime.datetime.now(bogota_tz) + datetime.timedelta(minutes=15)
-        logger.info("Tiempo de expiración del token establecido para: %s", expiration_time)
-
-        # Almacenar el token en la base de datos
-        user.verification_token = reset_token
-        logger.info("Token de restablecimiento guardado en la base de datos para el usuario: %s", user.email)
-
-        # Guardar el token y el tiempo de expiración en el diccionario global, sobrescribiendo el token existente si lo hay
-        reset_tokens[reset_token] = {
-            "expires_at": expiration_time,
-            "email": request.email
-        }
-        logger.info("Token de restablecimiento almacenado globalmente para el correo: %s", request.email)
-
-        # Guardar cambios en la base de datos
-        db.commit()
-        logger.info("Cambios guardados en la base de datos para el usuario: %s", user.email)
-
-        # Envía un correo electrónico con el token de restablecimiento
-        send_email(request.email, reset_token, 'reset')
-        logger.info("Correo electrónico de restablecimiento enviado a: %s", request.email)
-
-        return create_response("success", "Correo electrónico de restablecimiento de contraseña enviado")
-
-    except Exception as e:
-        logger.error("Error durante el proceso de restablecimiento de contraseña: %s", str(e))
-        db.rollback()
-        raise HTTPException(status_code=500, detail=f"Error sending password reset email: {str(e)}")
-
+    return forgot_password(request, db)
 
 @router.post("/verify-reset-token") # Renamed from /verify-token
 def verify_token(request: VerifyTokenRequest):
@@ -125,8 +80,6 @@ def verify_token(request: VerifyTokenRequest):
     Returns a success message if the token is valid, allowing the user to proceed
     with password reset. Returns an error if the token is invalid or expired.
     """
-    global reset_tokens
-
     logger.info("Iniciando la verificación del token: %s", request.token)
     logger.debug("Estado actual de reset_tokens: %s", reset_tokens)
 
@@ -163,8 +116,6 @@ def reset_password(reset: PasswordReset, db: Session = Depends(get_db_session)):
     Returns an error if passwords don't match, the new password is weak,
     or the token is invalid/expired.
     """
-    global reset_tokens
-
     logger.info("Iniciando el proceso de restablecimiento de contraseña para el token: %s", reset.token)
 
     # Verificar que las contraseñas coincidan
