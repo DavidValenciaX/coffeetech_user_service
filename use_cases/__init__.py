@@ -11,6 +11,7 @@ from .list_roles_use_case import list_roles
 from .register_user_use_case import register_user, validate_password_strength
 from .verify_email_use_case import verify_email
 from .verify_reset_token_use_case import verify_reset_token
+from .change_password_use_case import change_password
 
 __all__ = [
     "login",
@@ -18,5 +19,6 @@ __all__ = [
     "register_user",
     "validate_password_strength",
     "verify_email",
-    "verify_reset_token"
+    "verify_reset_token",
+    "change_password"
 ] 

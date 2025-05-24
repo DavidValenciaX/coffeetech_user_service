@@ -1,9 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
-from models.models import Users, UserSessions
+from models.models import UserSessions
 from utils.security import verify_session_token
-from utils.security import hash_password, generate_verification_token , verify_password
-from utils.email import send_email
 from utils.response import create_response, session_token_invalid_response
 from dataBase import get_db_session
 from use_cases.login_use_case import login
@@ -12,6 +10,7 @@ from use_cases.verify_email_use_case import verify_email
 from use_cases.forgot_password_use_case import forgot_password
 from use_cases.verify_reset_token_use_case import verify_reset_token
 from use_cases.reset_password_use_case import reset_password
+from use_cases.change_password_use_case import change_password as change_password_use_case
 from domain.schemas import (
     UserCreate,
     VerifyTokenRequest,
@@ -118,7 +117,7 @@ def login_endpoint(request: LoginRequest, db: Session = Depends(get_db_session))
     return login(request, db)
 
 @router.put("/change-password")
-def change_password(change: PasswordChange, session_token: str, db: Session = Depends(get_db_session)):
+def change_password_endpoint(change: PasswordChange, session_token: str, db: Session = Depends(get_db_session)):
     """
     Allows an authenticated user to change their password.
 
@@ -133,22 +132,7 @@ def change_password(change: PasswordChange, session_token: str, db: Session = De
     Returns an error if the session token is invalid, the current password is incorrect,
     or the new password is weak.
     """
-    user = verify_session_token(session_token, db)
-    if not user or not verify_password(change.current_password, user.password_hash):
-        return create_response("error", "Credenciales incorrectas")
-
-    # Validar que la nueva contraseña cumpla con los requisitos de seguridad
-    if not validate_password_strength(change.new_password):
-        return create_response("error", "La nueva contraseña debe tener al menos 8 caracteres, incluir una letra mayúscula, una letra minúscula, un número y un carácter especial")
-
-    try:
-        new_password_hash = hash_password(change.new_password)
-        user.password_hash = new_password_hash
-        db.commit()
-        return create_response("success", "Cambio de contraseña exitoso")
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=500, detail=f"Error al cambiar la contraseña: {str(e)}")
+    return change_password_use_case(change, session_token, db)
 
 @router.post("/logout")
 def logout(request: LogoutRequest, db: Session = Depends(get_db_session)):
