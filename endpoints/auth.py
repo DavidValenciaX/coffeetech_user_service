@@ -1,17 +1,16 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from utils.security import verify_session_token
-from utils.response import create_response, session_token_invalid_response
 from dataBase import get_db_session
 from use_cases.login_use_case import login
-from use_cases.register_user_use_case import register_user, validate_password_strength
+from use_cases.register_user_use_case import register_user
 from use_cases.verify_email_use_case import verify_email
 from use_cases.forgot_password_use_case import forgot_password
 from use_cases.verify_reset_token_use_case import verify_reset_token
 from use_cases.reset_password_use_case import reset_password
-from use_cases.change_password_use_case import change_password as change_password_use_case
-from use_cases.logout_use_case import logout as logout_use_case
-from use_cases.delete_account_use_case import delete_account as delete_account_use_case
+from use_cases.change_password_use_case import change_password
+from use_cases.logout_use_case import logout
+from use_cases.delete_account_use_case import delete_account
+from use_cases.update_profile_use_case import update_profile
 from domain.schemas import (
     UserCreate,
     VerifyTokenRequest,
@@ -22,9 +21,7 @@ from domain.schemas import (
     LogoutRequest,
     UpdateProfile,
 )
-import datetime, re, logging, pytz
-
-bogota_tz = pytz.timezone("America/Bogota")
+import logging
 
 logger = logging.getLogger(__name__)
 
@@ -133,10 +130,10 @@ def change_password_endpoint(change: PasswordChange, session_token: str, db: Ses
     Returns an error if the session token is invalid, the current password is incorrect,
     or the new password is weak.
     """
-    return change_password_use_case(change, session_token, db)
+    return change_password(change, session_token, db)
 
 @router.post("/logout")
-def logout(request: LogoutRequest, db: Session = Depends(get_db_session)):
+def logout_endpoint(request: LogoutRequest, db: Session = Depends(get_db_session)):
     """
     Logs out a user by deleting their session token record.
 
@@ -146,10 +143,10 @@ def logout(request: LogoutRequest, db: Session = Depends(get_db_session)):
     `UserSessions` record from the database. Optionally clears the FCM token.
     Returns an error if the session token is invalid.
     """
-    return logout_use_case(request, db)
+    return logout(request, db)
 
 @router.delete("/delete-account")
-def delete_account(session_token: str, db: Session = Depends(get_db_session)):
+def delete_account_endpoint(session_token: str, db: Session = Depends(get_db_session)):
     """
     Deletes the account of the currently authenticated user.
 
@@ -159,10 +156,10 @@ def delete_account(session_token: str, db: Session = Depends(get_db_session)):
     from the database.
     Returns an error if the session token is invalid.
     """
-    return delete_account_use_case(session_token, db)
+    return delete_account(session_token, db)
 
 @router.post("/update-profile")
-def update_profile(profile: UpdateProfile, session_token: str, db: Session = Depends(get_db_session)):
+def update_profile_endpoint(profile: UpdateProfile, session_token: str, db: Session = Depends(get_db_session)):
     """
     Updates the profile information (currently only the name) for the authenticated user.
 
@@ -173,19 +170,4 @@ def update_profile(profile: UpdateProfile, session_token: str, db: Session = Dep
     Finds the user by the session token and updates their name.
     Returns an error if the session token is invalid or the new name is empty.
     """
-    user = verify_session_token(session_token, db)
-    if not user:
-        return session_token_invalid_response()
-    
-    # Validación de que el nuevo nombre no sea vacío
-    if not profile.new_name.strip():
-        return create_response("error", "El nombre no puede estar vacío")
-
-    try:
-        # Solo actualizamos el nombre del usuario
-        user.name = profile.new_name
-        db.commit()
-        return create_response("success", "Perfil actualizado exitosamente")
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=500, detail=f"Error al actualizar el perfil: {str(e)}")
+    return update_profile(profile, session_token, db)
