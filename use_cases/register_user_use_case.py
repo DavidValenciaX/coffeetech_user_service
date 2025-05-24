@@ -1,106 +1,168 @@
 from fastapi import HTTPException
-from models.models import Users
-from utils.security import hash_password, generate_verification_token
-from utils.email import send_email
+from sqlalchemy.orm import Session
+from domain.validators import UserValidator
+from domain.repositories import UserRepository
+from domain.services import NotificationService
 from utils.response import create_response
-from utils.state import get_user_state
-import re
 import logging
 
 logger = logging.getLogger(__name__)
 
-def validate_password_strength(password: str) -> bool:
-    """
-    Validates if a password meets the strength requirements.
-    
-    The password must have at least:
-    - 8 characters
-    - 1 uppercase letter
-    - 1 lowercase letter
-    - 1 number
-    - 1 special character
-    """
-    if (len(password) >= 8 and
-        re.search(r'[A-Z]', password) and
-        re.search(r'[a-z]', password) and
-        re.search(r'\d', password) and
-        re.search(r'[\W_]', password)):
-        return True
-    return False
 
-def register_user(user_data, db):
+class RegisterUserUseCase:
     """
-    Registers a new user in the system.
+    Caso de uso responsable de orquestar el registro de usuarios.
     
-    Args:
-        user_data: UserCreate object with user registration data
-        db: Database session
+    Este caso de uso coordina las diferentes operaciones necesarias para registrar
+    un usuario, delegando responsabilidades específicas a sus respectivas clases.
+    """
+    
+    def __init__(self, db: Session):
+        self.db = db
+        self.user_repository = UserRepository(db)
+        self.notification_service = NotificationService()
+        self.user_validator = UserValidator()
+    
+    def execute(self, user_data) -> dict:
+        """
+        Ejecuta el caso de uso de registro de usuario.
         
-    Returns:
-        Response object with success or error message
-    """
-    # Validación del nombre (no puede estar vacío)
-    if not user_data.name.strip():
-        return create_response("error", "El nombre no puede estar vacío")
+        Args:
+            user_data: UserCreate object con los datos de registro del usuario
+            
+        Returns:
+            Response object con mensaje de éxito o error
+            
+        Raises:
+            HTTPException: Si ocurre un error durante el proceso
+        """
+        try:
+            # 1. Validar datos de entrada
+            validation_error = self._validate_user_data(user_data)
+            if validation_error:
+                return create_response("error", validation_error)
+            
+            # 2. Verificar si el usuario ya existe
+            existing_user = self.user_repository.find_by_email(user_data.email)
+            
+            if existing_user:
+                return self._handle_existing_user(existing_user, user_data)
+            
+            # 3. Crear nuevo usuario
+            return self._create_new_user(user_data)
+            
+        except Exception as e:
+            logger.error(f"Error en registro de usuario: {str(e)}")
+            raise HTTPException(
+                status_code=500, 
+                detail=f"Error interno del servidor: {str(e)}"
+            )
     
-    # Validación de la contraseña
-    if user_data.password != user_data.passwordConfirmation:
-        return create_response("error", "Las contraseñas no coinciden")
+    def _validate_user_data(self, user_data) -> str:
+        """
+        Valida los datos del usuario.
+        
+        Args:
+            user_data: Datos del usuario a validar
+            
+        Returns:
+            Mensaje de error si hay problemas, None si todo está bien
+        """
+        return self.user_validator.validate_user_registration(
+            user_data.name,
+            user_data.password,
+            user_data.passwordConfirmation
+        )
     
-    if not validate_password_strength(user_data.password):
-        return create_response("error", "La contraseña debe tener al menos 8 caracteres, incluir una letra mayúscula, una letra minúscula, un número y un carácter especial")
-    
-    # Verificar si el usuario ya existe
-    db_user = db.query(Users).filter(Users.email == user_data.email).first()
-    user_registry_state = get_user_state(db, "No Verificado")
-    
-    if db_user:
-        # Si el usuario está como "No Verificado", actualiza sus datos y reenvía el correo
-        if db_user.user_state_id == user_registry_state.user_state_id:
+    def _handle_existing_user(self, existing_user, user_data) -> dict:
+        """
+        Maneja el caso cuando el usuario ya existe.
+        
+        Args:
+            existing_user: Usuario existente en la base de datos
+            user_data: Nuevos datos del usuario
+            
+        Returns:
+            Response object con el resultado de la operación
+        """
+        if self.user_repository.is_user_unverified(existing_user):
             try:
-                db_user.name = user_data.name
-                db_user.password_hash = hash_password(user_data.password)
-                verification_token = generate_verification_token(4)
-                db_user.verification_token = verification_token
-                db.commit()
-                db.refresh(db_user)
-                send_email(user_data.email, verification_token, 'verification')
-                return create_response("success", "Hemos enviado un correo electrónico para verificar tu cuenta nuevamente")
+                # Actualizar usuario no verificado
+                updated_user = self.user_repository.update_unverified_user(
+                    existing_user,
+                    user_data.name,
+                    user_data.password
+                )
+                
+                # Enviar nuevo email de verificación
+                self.notification_service.send_verification_email(
+                    user_data.email,
+                    updated_user.verification_token
+                )
+                
+                return create_response(
+                    "success",
+                    "Hemos enviado un correo electrónico para verificar tu cuenta nuevamente"
+                )
+                
             except Exception as e:
-                db.rollback()
-                logger.error(f"Error al actualizar usuario o enviar correo: {str(e)}")
-                raise HTTPException(status_code=500, detail=f"Error al actualizar usuario o enviar correo: {str(e)}")
+                logger.error(f"Error al actualizar usuario no verificado: {str(e)}")
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Error al actualizar usuario o enviar correo: {str(e)}"
+                )
         else:
             return create_response("error", "El correo ya está registrado")
-
-    try:
-        password_hash = hash_password(user_data.password)
-        verification_token = generate_verification_token(4)
-
-        # Usar get_user_state para obtener el estado "No Verificado"
-        user_registry_state = get_user_state(db, "No Verificado")
-        if not user_registry_state:
-            return create_response("error", "No se encontró el estado 'No Verificado' para usuarios", status_code=400)
-
-        # Crear el nuevo usuario con estado "No Verificado"
-        new_user = Users(
-            name=user_data.name,
-            email=user_data.email,
-            password_hash=password_hash,
-            verification_token=verification_token,
-            user_state_id=user_registry_state.user_state_id
-        )
-
-        db.add(new_user)
-        db.commit()
-        db.refresh(new_user)
-
-        send_email(user_data.email, verification_token, 'verification')
-
-        logger.info(f"Usuario registrado exitosamente: {user_data.email}")
-        return create_response("success", "Hemos enviado un correo electrónico para verificar tu cuenta")
+    
+    def _create_new_user(self, user_data) -> dict:
+        """
+        Crea un nuevo usuario.
         
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Error al registrar usuario: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error al registrar usuario o enviar correo: {str(e)}") 
+        Args:
+            user_data: Datos del nuevo usuario
+            
+        Returns:
+            Response object con el resultado de la operación
+        """
+        try:
+            # Crear usuario
+            new_user = self.user_repository.create_user(
+                user_data.name,
+                user_data.email,
+                user_data.password
+            )
+            
+            # Enviar email de verificación
+            self.notification_service.send_verification_email(
+                user_data.email,
+                new_user.verification_token
+            )
+            
+            logger.info(f"Usuario registrado exitosamente: {user_data.email}")
+            return create_response(
+                "success",
+                "Hemos enviado un correo electrónico para verificar tu cuenta"
+            )
+            
+        except Exception as e:
+            logger.error(f"Error al crear nuevo usuario: {str(e)}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error al registrar usuario o enviar correo: {str(e)}"
+            )
+
+
+# Función de conveniencia para mantener compatibilidad con código existente
+def register_user(user_data, db: Session) -> dict:
+    """
+    Función de conveniencia para registrar un usuario.
+    
+    Args:
+        user_data: UserCreate object con datos de registro
+        db: Sesión de base de datos
+        
+    Returns:
+        Response object con el resultado de la operación
+    """
+    use_case = RegisterUserUseCase(db)
+    return use_case.execute(user_data) 

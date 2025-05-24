@@ -1,7 +1,7 @@
 from fastapi import HTTPException
 from utils.security import verify_session_token, verify_password, hash_password
 from utils.response import create_response, session_token_invalid_response
-from use_cases.register_user_use_case import validate_password_strength
+from domain.validators import UserValidator
 import logging
 
 logger = logging.getLogger(__name__)
@@ -32,9 +32,10 @@ def change_password(change, session_token, db):
         return create_response("error", "Credenciales incorrectas")
 
     # Validar que la nueva contraseña cumpla con los requisitos de seguridad
-    if not validate_password_strength(change.new_password):
+    password_error = UserValidator.validate_password_strength(change.new_password)
+    if password_error:
         logger.warning(f"Nueva contraseña no cumple requisitos de seguridad para el usuario: {user.email}")
-        return create_response("error", "La nueva contraseña debe tener al menos 8 caracteres, incluir una letra mayúscula, una letra minúscula, un número y un carácter especial")
+        return create_response("error", password_error)
 
     try:
         # Generar hash de la nueva contraseña

@@ -2,7 +2,7 @@ from fastapi import HTTPException
 from models.models import Users
 from utils.security import hash_password
 from utils.response import create_response
-from use_cases.register_user_use_case import validate_password_strength
+from domain.validators import UserValidator
 from use_cases.forgot_password_use_case import reset_tokens
 import datetime
 import pytz
@@ -30,7 +30,7 @@ def reset_password(reset, db):
         return create_response("error", "Las contraseñas no coinciden")
 
     # Validar que la nueva contraseña cumpla con los requisitos de seguridad
-    if not validate_password_strength(reset.new_password):
+    if not UserValidator.validate_password_strength(reset.new_password):
         return create_response("error", "La nueva contraseña debe tener al menos 8 caracteres, incluir una letra mayúscula, una letra minúscula, un número y un carácter especial")
 
     # Verificar el token en el diccionario en memoria

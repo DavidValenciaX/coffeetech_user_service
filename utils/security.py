@@ -1,16 +1,17 @@
 from typing import Optional
-from passlib.context import CryptContext
+import argon2
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from models.models import Users, UserSessions
 import random
 import string
 
-pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
+# Create Argon2 password hasher with recommended settings
+ph = argon2.PasswordHasher()
 
 def hash_password(password: str) -> str:
     """
-    Hashea una contraseña utilizando el esquema configurado en CryptContext.
+    Hashea una contraseña utilizando Argon2.
 
     Args:
         password (str): La contraseña en texto plano a hashear.
@@ -18,7 +19,7 @@ def hash_password(password: str) -> str:
     Returns:
         str: La contraseña hasheada.
     """
-    return pwd_context.hash(password)
+    return ph.hash(password)
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """
@@ -31,7 +32,13 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     Returns:
         bool: Verdadero si las contraseñas coinciden, falso en caso contrario.
     """
-    return pwd_context.verify(plain_password, hashed_password)
+    try:
+        ph.verify(hashed_password, plain_password)
+        return True
+    except argon2.exceptions.VerifyMismatchError:
+        return False
+    except argon2.exceptions.InvalidHash:
+        return False
 
 def generate_verification_token(length: int=3) -> str:
     """
