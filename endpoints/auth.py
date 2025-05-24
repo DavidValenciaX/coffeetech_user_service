@@ -1,6 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
-from models.models import UserSessions
 from utils.security import verify_session_token
 from utils.response import create_response, session_token_invalid_response
 from dataBase import get_db_session
@@ -11,6 +10,7 @@ from use_cases.forgot_password_use_case import forgot_password
 from use_cases.verify_reset_token_use_case import verify_reset_token
 from use_cases.reset_password_use_case import reset_password
 from use_cases.change_password_use_case import change_password as change_password_use_case
+from use_cases.logout_use_case import logout as logout_use_case
 from domain.schemas import (
     UserCreate,
     VerifyTokenRequest,
@@ -145,23 +145,7 @@ def logout(request: LogoutRequest, db: Session = Depends(get_db_session)):
     `UserSessions` record from the database. Optionally clears the FCM token.
     Returns an error if the session token is invalid.
     """
-    
-    # Find the session record using the token
-    session = db.query(UserSessions).filter(UserSessions.session_token == request.session_token).first()
-
-    if not session:
-        # Use the standard invalid token response
-        return session_token_invalid_response() 
-        
-    try:
-        # Delete the session record
-        db.delete(session)
-        db.commit()
-        return create_response("success", "Cierre de sesión exitoso")
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Error durante el cierre de sesión para el token {request.session_token}: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error durante el cierre de sesión: {str(e)}")
+    return logout_use_case(request, db)
 
 @router.delete("/delete-account")
 def delete_account(session_token: str, db: Session = Depends(get_db_session)):
