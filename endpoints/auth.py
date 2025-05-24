@@ -10,6 +10,7 @@ from use_cases.login_use_case import login
 from use_cases.register_user_use_case import register_user, validate_password_strength
 from use_cases.verify_email_use_case import verify_email
 from use_cases.forgot_password_use_case import forgot_password, reset_tokens
+from use_cases.verify_reset_token_use_case import verify_reset_token
 from domain.schemas import (
     UserCreate,
     VerifyTokenRequest,
@@ -80,27 +81,7 @@ def verify_token(request: VerifyTokenRequest):
     Returns a success message if the token is valid, allowing the user to proceed
     with password reset. Returns an error if the token is invalid or expired.
     """
-    logger.info("Iniciando la verificación del token: %s", request.token)
-    logger.debug("Estado actual de reset_tokens: %s", reset_tokens)
-
-    token_info = reset_tokens.get(request.token)
-
-    if token_info:
-        logger.info("Token encontrado: %s", request.token)
-
-        current_time = datetime.datetime.now(bogota_tz)
-        expires_at = token_info['expires_at']
-        logger.debug("Hora actual: %s, Expira a: %s", current_time, expires_at)
-
-        if current_time > expires_at:
-            logger.info("El token ha expirado: %s", request.token)
-            return create_response("error", "Token ha expirado")
-
-        logger.info("Token válido, puede proceder a restablecer la contraseña.")
-        return create_response("success", "Token válido. Puede proceder a restablecer la contraseña.")
-
-    logger.warning("Token inválido o expirado: %s", request.token)
-    return create_response("error", "Token inválido o expirado")
+    return verify_reset_token(request.token)
 
 @router.post("/reset-password")
 def reset_password(reset: PasswordReset, db: Session = Depends(get_db_session)):
