@@ -149,20 +149,4 @@ class RegisterUserUseCase:
             raise HTTPException(
                 status_code=500,
                 detail=f"Error al registrar usuario o enviar correo: {str(e)}"
-            )
-
-
-# Función de conveniencia para mantener compatibilidad con código existente
-def register_user(user_data, db: Session) -> dict:
-    """
-    Función de conveniencia para registrar un usuario.
-    
-    Args:
-        user_data: UserCreate object con datos de registro
-        db: Sesión de base de datos
-        
-    Returns:
-        Response object con el resultado de la operación
-    """
-    use_case = RegisterUserUseCase(db)
-    return use_case.execute(user_data) 
+            ) 

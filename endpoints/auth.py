@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from dataBase import get_db_session
 from use_cases.login_use_case import login
-from use_cases.register_user_use_case import register_user
+from use_cases.register_user_use_case import RegisterUserUseCase
 from use_cases.verify_email_use_case import verify_email
 from use_cases.forgot_password_use_case import forgot_password
 from use_cases.verify_reset_token_use_case import verify_reset_token
@@ -41,7 +41,8 @@ def register_user_endpoint(user: UserCreate, db: Session = Depends(get_db_sessio
     Returns an error if the email is already registered, passwords don't match,
     or the password doesn't meet strength requirements.
     """
-    return register_user(user, db)
+    use_case = RegisterUserUseCase(db)
+    return use_case.execute(user)
 
 @router.post("/verify-email")
 def verify_email_endpoint(request: VerifyTokenRequest, db: Session = Depends(get_db_session)):
