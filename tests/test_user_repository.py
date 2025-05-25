@@ -84,17 +84,36 @@ class TestUserRepository:
         mock_get_user_state.return_value = mock_state
         
         mock_user = Mock(spec=Users)
-        self.mock_db.refresh = Mock()
+        mock_user.name = "Test User"
+        mock_user.email = "test@example.com"
+        mock_user.password_hash = "hashed_password"
+        mock_user.verification_token = "verification_token"
+        mock_user.user_state_id = 1
         
-        # Act
-        result = self.repository.create_user("Test User", "test@example.com", "password123")
-        
-        # Assert
-        self.mock_db.add.assert_called_once()
-        self.mock_db.commit.assert_called_once()
-        self.mock_db.refresh.assert_called_once()
-        mock_hash_password.assert_called_once_with("password123")
-        mock_generate_token.assert_called_once_with(4)
+        # Simular que el usuario creado es mock_user
+        with patch.object(self.repository, 'db') as mock_db:
+            mock_db.add = Mock()
+            mock_db.commit = Mock()
+            mock_db.refresh = Mock()
+            
+            # Simular la creación del objeto Users
+            with patch('domain.repositories.Users', return_value=mock_user):
+                # Act
+                result = self.repository.create_user("Test User", "test@example.com", "password123")
+                
+                # Assert
+                assert result == mock_user
+                assert result.name == "Test User"
+                assert result.email == "test@example.com"
+                assert result.password_hash == "hashed_password"
+                assert result.verification_token == "verification_token"
+                assert result.user_state_id == 1
+                
+                mock_db.add.assert_called_once_with(mock_user)
+                mock_db.commit.assert_called_once()
+                mock_db.refresh.assert_called_once_with(mock_user)
+                mock_hash_password.assert_called_once_with("password123")
+                mock_generate_token.assert_called_once_with(4)
     
     @patch('domain.repositories.get_user_state')
     def test_create_user_no_unverified_state(self, mock_get_user_state):
