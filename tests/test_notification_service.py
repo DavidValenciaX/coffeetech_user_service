@@ -41,12 +41,11 @@ class TestNotificationService:
         # Arrange
         email = "test@example.com"
         
-        # Act - No debería lanzar excepción
-        NotificationService.send_welcome_email(email)
+        # Act
+        result = NotificationService.send_welcome_email(email)
         
-        # Assert - El método debería completarse sin errores
-        # Como está comentado el envío real, solo verificamos que no falle
-        assert True
+        # Assert
+        assert result is None
     
     @patch('domain.services.logger')
     def test_send_welcome_email_logs_info(self, mock_logger):
