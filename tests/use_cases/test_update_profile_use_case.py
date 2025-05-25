@@ -49,7 +49,7 @@ def sample_user_and_session(mock_db_session):
 def test_update_profile_success(mock_verify_session, mock_db_session, sample_user_and_session):
     """Test successful profile update with valid data"""
     # Arrange
-    user, session = sample_user_and_session
+    user, _ = sample_user_and_session
     mock_verify_session.return_value = user
     
     profile_update = UpdateProfile(new_name='Updated Name')
@@ -102,7 +102,7 @@ def test_update_profile_invalid_session_token(mock_verify_session, mock_db_sessi
 def test_update_profile_empty_name(mock_verify_session, mock_db_session, sample_user_and_session):
     """Test profile update with empty name"""
     # Arrange
-    user, session = sample_user_and_session
+    user, _ = sample_user_and_session
     mock_verify_session.return_value = user
     
     profile_update = UpdateProfile(new_name='')
@@ -128,7 +128,7 @@ def test_update_profile_empty_name(mock_verify_session, mock_db_session, sample_
 def test_update_profile_whitespace_only_name(mock_verify_session, mock_db_session, sample_user_and_session):
     """Test profile update with whitespace-only name"""
     # Arrange
-    user, session = sample_user_and_session
+    user, _ = sample_user_and_session
     mock_verify_session.return_value = user
     
     profile_update = UpdateProfile(new_name='   ')
@@ -151,7 +151,7 @@ def test_update_profile_whitespace_only_name(mock_verify_session, mock_db_sessio
 def test_update_profile_name_too_short(mock_verify_session, mock_db_session, sample_user_and_session):
     """Test profile update with name that's too short (should succeed since no length validation exists)"""
     # Arrange
-    user, session = sample_user_and_session
+    user, _ = sample_user_and_session
     mock_verify_session.return_value = user
     
     profile_update = UpdateProfile(new_name='A')  # Single character
@@ -174,7 +174,7 @@ def test_update_profile_name_too_short(mock_verify_session, mock_db_session, sam
 def test_update_profile_name_too_long(mock_verify_session, mock_db_session, sample_user_and_session):
     """Test profile update with name that's too long (should succeed since no length validation exists)"""
     # Arrange
-    user, session = sample_user_and_session
+    user, _ = sample_user_and_session
     mock_verify_session.return_value = user
     
     long_name = 'A' * 51  # 51 characters
@@ -198,7 +198,7 @@ def test_update_profile_name_too_long(mock_verify_session, mock_db_session, samp
 def test_update_profile_name_with_numbers(mock_verify_session, mock_db_session, sample_user_and_session):
     """Test profile update with name containing numbers (should succeed since no character validation exists)"""
     # Arrange
-    user, session = sample_user_and_session
+    user, _ = sample_user_and_session
     mock_verify_session.return_value = user
     
     profile_update = UpdateProfile(new_name='John123')
@@ -221,7 +221,7 @@ def test_update_profile_name_with_numbers(mock_verify_session, mock_db_session, 
 def test_update_profile_name_with_special_characters(mock_verify_session, mock_db_session, sample_user_and_session):
     """Test profile update with name containing special characters (should succeed since no character validation exists)"""
     # Arrange
-    user, session = sample_user_and_session
+    user, _ = sample_user_and_session
     mock_verify_session.return_value = user
     
     profile_update = UpdateProfile(new_name='John@Doe')
@@ -244,7 +244,7 @@ def test_update_profile_name_with_special_characters(mock_verify_session, mock_d
 def test_update_profile_valid_name_with_spaces(mock_verify_session, mock_db_session, sample_user_and_session):
     """Test profile update with valid name containing spaces"""
     # Arrange
-    user, session = sample_user_and_session
+    user, _ = sample_user_and_session
     mock_verify_session.return_value = user
     
     profile_update = UpdateProfile(new_name='John Doe Smith')
@@ -267,7 +267,7 @@ def test_update_profile_valid_name_with_spaces(mock_verify_session, mock_db_sess
 def test_update_profile_name_with_accents(mock_verify_session, mock_db_session, sample_user_and_session):
     """Test profile update with name containing accented characters"""
     # Arrange
-    user, session = sample_user_and_session
+    user, _ = sample_user_and_session
     mock_verify_session.return_value = user
     
     profile_update = UpdateProfile(new_name='José María')
@@ -290,7 +290,7 @@ def test_update_profile_name_with_accents(mock_verify_session, mock_db_session, 
 def test_update_profile_database_error_on_commit(mock_verify_session, mock_db_session, sample_user_and_session):
     """Test profile update when database commit fails"""
     # Arrange
-    user, session = sample_user_and_session
+    user, _ = sample_user_and_session
     mock_verify_session.return_value = user
     
     profile_update = UpdateProfile(new_name='Updated Name')
@@ -316,7 +316,7 @@ def test_update_profile_database_error_on_commit(mock_verify_session, mock_db_se
 def test_update_profile_same_name(mock_verify_session, mock_db_session, sample_user_and_session):
     """Test profile update with the same name (should still succeed)"""
     # Arrange
-    user, session = sample_user_and_session
+    user, _ = sample_user_and_session
     mock_verify_session.return_value = user
     
     profile_update = UpdateProfile(new_name='Original Name')  # Same as current name
@@ -342,7 +342,7 @@ def test_update_profile_same_name(mock_verify_session, mock_db_session, sample_u
 def test_update_profile_minimum_valid_length(mock_verify_session, mock_db_session, sample_user_and_session):
     """Test profile update with minimum valid name length"""
     # Arrange
-    user, session = sample_user_and_session
+    user, _ = sample_user_and_session
     mock_verify_session.return_value = user
     
     profile_update = UpdateProfile(new_name='Jo')  # 2 characters (minimum)
@@ -365,7 +365,7 @@ def test_update_profile_minimum_valid_length(mock_verify_session, mock_db_sessio
 def test_update_profile_maximum_valid_length(mock_verify_session, mock_db_session, sample_user_and_session):
     """Test profile update with maximum valid name length"""
     # Arrange
-    user, session = sample_user_and_session
+    user, _ = sample_user_and_session
     mock_verify_session.return_value = user
     
     max_name = 'A' * 50  # 50 characters (maximum)
@@ -389,7 +389,7 @@ def test_update_profile_maximum_valid_length(mock_verify_session, mock_db_sessio
 def test_update_profile_name_with_leading_trailing_spaces(mock_verify_session, mock_db_session, sample_user_and_session):
     """Test profile update with name having leading/trailing spaces (spaces are preserved)"""
     # Arrange
-    user, session = sample_user_and_session
+    user, _ = sample_user_and_session
     mock_verify_session.return_value = user
     
     profile_update = UpdateProfile(new_name='  John Doe  ')
@@ -412,7 +412,7 @@ def test_update_profile_name_with_leading_trailing_spaces(mock_verify_session, m
 def test_update_profile_multiple_consecutive_spaces(mock_verify_session, mock_db_session, sample_user_and_session):
     """Test profile update with name having multiple consecutive spaces"""
     # Arrange
-    user, session = sample_user_and_session
+    user, _ = sample_user_and_session
     mock_verify_session.return_value = user
     
     profile_update = UpdateProfile(new_name='John    Doe')  # Multiple spaces
