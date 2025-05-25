@@ -2,7 +2,7 @@ from fastapi import HTTPException
 from domain.services.session_token_service import verify_session_token
 from utils.response import create_response, session_token_invalid_response
 from domain.user_repository import UserRepository
-from domain.validators import UserValidator
+from domain.user_validator import UserValidator
 import logging
 
 logger = logging.getLogger(__name__)

@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from models.models import Users
 from utils.security import hash_password
 from utils.response import create_response
-from domain.validators import UserValidator
+from domain.user_validator import UserValidator
 from domain.services import password_reset_token_service
 from domain.user_repository import UserRepository
 import logging

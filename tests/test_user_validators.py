@@ -3,7 +3,7 @@ import os
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
 
-from domain.validators import UserValidator
+from domain.user_validator import UserValidator
 
 
 class TestUserValidator:

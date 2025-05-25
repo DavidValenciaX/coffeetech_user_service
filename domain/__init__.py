@@ -5,7 +5,7 @@ Este módulo contiene las clases de dominio, validadores, repositorios y servici
 que encapsulan la lógica de negocio del sistema de usuarios.
 """
 
-from .validators import UserValidator
+from .user_validator import UserValidator
 from .user_repository import UserRepository
 from .services import NotificationService
 from .services import EmailService, email_service
