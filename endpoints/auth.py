@@ -8,7 +8,7 @@ from use_cases.forgot_password_use_case import ForgotPasswordUseCase
 from use_cases.verify_reset_token_use_case import VerifyResetTokenUseCase
 from use_cases.reset_password_use_case import ResetPasswordUseCase
 from use_cases.change_password_use_case import ChangePasswordUseCase
-from use_cases.logout_use_case import logout
+from use_cases.logout_use_case import LogoutUseCase
 from use_cases.delete_account_use_case import delete_account
 from use_cases.update_profile_use_case import update_profile
 from domain.schemas import (
@@ -150,7 +150,8 @@ def logout_endpoint(request: LogoutRequest, db: Session = Depends(get_db_session
     `UserSessions` record from the database. Optionally clears the FCM token.
     Returns an error if the session token is invalid.
     """
-    return logout(request, db)
+    use_case = LogoutUseCase(db)
+    return use_case.execute(request)
 
 @router.delete("/delete-account")
 def delete_account_endpoint(session_token: str, db: Session = Depends(get_db_session)):

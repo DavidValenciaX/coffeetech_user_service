@@ -12,6 +12,7 @@ from .register_user_use_case import RegisterUserUseCase
 from .verify_email_use_case import verify_email
 from .change_password_use_case import ChangePasswordUseCase
 from .delete_account_use_case import delete_account
+from .logout_use_case import LogoutUseCase
 
 __all__ = [
     "LoginUseCase",
@@ -19,5 +20,6 @@ __all__ = [
     "RegisterUserUseCase",
     "verify_email",
     "ChangePasswordUseCase",
-    "delete_account"
+    "delete_account",
+    "LogoutUseCase"
 ] 
