@@ -15,11 +15,12 @@ class DeleteAccountUseCase:
         self.user_repository = UserRepository(db)
 
     def execute(self, session_token: str):
-        logger.info(f"Iniciando proceso de eliminación de cuenta para token: {session_token[:8]}...")
+        token_preview = session_token[:8] if session_token else "None"
+        logger.info(f"Iniciando proceso de eliminación de cuenta para token: {token_preview}...")
         # Verify the session token and get the user
         user = verify_session_token(session_token, self.db)
         if not user:
-            logger.warning(f"Token de sesión inválido durante eliminación de cuenta: {session_token[:8]}...")
+            logger.warning(f"Token de sesión inválido durante eliminación de cuenta: {token_preview}...")
             return session_token_invalid_response()
         try:
             logger.debug(f"Eliminando cuenta para usuario ID: {user.user_id}, email: {user.email}")
@@ -30,5 +31,5 @@ class DeleteAccountUseCase:
             return create_response("success", "Cuenta eliminada exitosamente")
         except Exception as e:
             self.db.rollback()
-            logger.error(f"Error eliminando cuenta para token {session_token[:8]}...: {str(e)}")
+            logger.error(f"Error eliminando cuenta para token {token_preview}...: {str(e)}")
             raise HTTPException(status_code=500, detail=f"Error eliminando cuenta: {str(e)}") 

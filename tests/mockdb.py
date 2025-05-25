@@ -258,6 +258,33 @@ class MockDB:
             from sqlalchemy.exc import OperationalError
             raise OperationalError(self.rollback_error_message, None, None)
         self.rolled_back = True
+
+    def delete(self, obj):
+        """Delete an object from the mock database."""
+        if obj.__class__.__name__ == "Users":
+            if obj in self.users:
+                self.users.remove(obj)
+        elif obj.__class__.__name__ == "UserStates":
+            if obj in self.user_states:
+                self.user_states.remove(obj)
+        elif obj.__class__.__name__ == "UserSessions":
+            if obj in self.user_sessions:
+                self.user_sessions.remove(obj)
+        elif obj.__class__.__name__ == "UserDevices":
+            if obj in self.user_devices:
+                self.user_devices.remove(obj)
+        elif obj.__class__.__name__ == "Roles":
+            if obj in self.roles:
+                self.roles.remove(obj)
+        elif obj.__class__.__name__ == "Permissions":
+            if obj in self.permissions:
+                self.permissions.remove(obj)
+        elif obj.__class__.__name__ == "RolePermission":
+            if obj in self.role_permissions:
+                self.role_permissions.remove(obj)
+        elif obj.__class__.__name__ == "UserRole":
+            if obj in self.user_roles:
+                self.user_roles.remove(obj)
     
     # Métodos de configuración para tests
     def set_commit_fail(self, should_fail=True, error_message="DB commit failed"):
