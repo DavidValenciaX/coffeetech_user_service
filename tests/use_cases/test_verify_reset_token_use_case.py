@@ -5,7 +5,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../.
 
 import pytest
 import json
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 from fastapi.responses import ORJSONResponse
 from use_cases.verify_reset_token_use_case import VerifyResetTokenUseCase
 

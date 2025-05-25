@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from models.models import Roles
 from dataBase import get_db_session
 from use_cases.list_roles_use_case import ListRolesUseCase
 

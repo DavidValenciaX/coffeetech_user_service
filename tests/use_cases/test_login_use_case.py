@@ -7,7 +7,6 @@ import pytest
 from unittest.mock import MagicMock, patch
 from fastapi import HTTPException
 import orjson
-from sqlalchemy.exc import OperationalError
 
 from use_cases.login_use_case import LoginUseCase
 from tests.mockdb import MockDB, UserSessions, Users, UserDevices, UserStates
