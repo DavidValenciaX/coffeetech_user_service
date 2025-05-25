@@ -4,7 +4,6 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 
 import pytest
-from unittest.mock import MagicMock
 from fastapi import HTTPException
 import orjson
 
@@ -48,7 +47,7 @@ def sample_user_and_session(mock_db_session):
 def test_logout_success(mock_db_session, sample_user_and_session):
     """Test successful logout with valid session token"""
     # Arrange
-    user, session = sample_user_and_session
+    _ = sample_user_and_session  # Ensure fixture runs to set up test data
     
     logout_request = LogoutRequest(session_token='test_session_token_12345')
     
@@ -107,7 +106,7 @@ def test_logout_empty_session_token(mock_db_session):
 def test_logout_database_error_on_delete(mock_db_session, sample_user_and_session):
     """Test logout when database delete operation fails"""
     # Arrange
-    user, session = sample_user_and_session
+    _ = sample_user_and_session  # Ensure fixture runs to set up test data
     logout_request = LogoutRequest(session_token='test_session_token_12345')
     
     # Configure mock to fail on commit
@@ -128,7 +127,7 @@ def test_logout_database_error_on_delete(mock_db_session, sample_user_and_sessio
 def test_logout_database_error_on_commit(mock_db_session, sample_user_and_session):
     """Test logout when database commit operation fails"""
     # Arrange
-    user, session = sample_user_and_session
+    _ = sample_user_and_session  # Ensure fixture runs to set up test data
     logout_request = LogoutRequest(session_token='test_session_token_12345')
     
     # Configure mock to fail on commit
@@ -203,7 +202,7 @@ def test_logout_multiple_sessions_same_user(mock_db_session):
 def test_logout_with_very_long_session_token(mock_db_session, sample_user_and_session):
     """Test logout with a very long session token"""
     # Arrange
-    user, session = sample_user_and_session
+    _ , session = sample_user_and_session
     
     # Update session with a very long token
     long_token = 'a' * 255  # Maximum length token
@@ -229,7 +228,7 @@ def test_logout_with_very_long_session_token(mock_db_session, sample_user_and_se
 def test_logout_case_sensitive_token(mock_db_session, sample_user_and_session):
     """Test that logout is case-sensitive for session tokens"""
     # Arrange
-    user, session = sample_user_and_session
+    _ = sample_user_and_session  # Ensure fixture runs to set up test data
     
     # Try to logout with different case
     logout_request = LogoutRequest(session_token='TEST_SESSION_TOKEN_12345')
