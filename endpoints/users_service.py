@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 from models.models import Roles, UserRole, Users, UserDevices
 from dataBase import get_db_session
-from utils.security import verify_session_token
+from domain.repositories import verify_session_token
 from utils.response import create_response
 from domain.schemas import (
     UserRoleCreateRequest,

@@ -3,7 +3,7 @@ from models.models import Users, UserSessions, UserDevices
 from utils.security import verify_password, generate_verification_token
 from domain.services import email_service
 from utils.response import create_response
-from utils.state import get_user_state
+from domain.repositories import get_user_state
 import logging
 
 logger = logging.getLogger(__name__)

@@ -1,8 +1,4 @@
-from typing import Optional
 import argon2
-from sqlalchemy import select
-from sqlalchemy.orm import Session
-from models.models import Users, UserSessions
 import random
 import string
 
@@ -53,21 +49,3 @@ def generate_verification_token(length: int=3) -> str:
     characters = string.ascii_letters + string.digits  # Letras mayúsculas, minúsculas y dígitos
     return ''.join(random.choices(characters, k=length))
 
-# Función auxiliar para verificar tokens de sesión
-def verify_session_token(session_token: str, db: Session) -> Optional[Users]:
-    """
-    Verifica si un token de sesión es válido y devuelve el usuario correspondiente.
-
-    Args:
-        session_token (str): El token de sesión a verificar.
-        db (Session): La sesión de base de datos.
-
-    Returns:
-        User | None: El objeto usuario correspondiente al token de sesión, o None si no se encuentra o no es válido.
-    """
-    stmt = (
-        select(Users)
-        .join(UserSessions)
-        .where(UserSessions.session_token == session_token)
-    )
-    return db.execute(stmt).scalar_one_or_none()
