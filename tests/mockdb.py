@@ -261,30 +261,20 @@ class MockDB:
 
     def delete(self, obj):
         """Delete an object from the mock database."""
-        if obj.__class__.__name__ == "Users":
-            if obj in self.users:
-                self.users.remove(obj)
-        elif obj.__class__.__name__ == "UserStates":
-            if obj in self.user_states:
-                self.user_states.remove(obj)
-        elif obj.__class__.__name__ == "UserSessions":
-            if obj in self.user_sessions:
-                self.user_sessions.remove(obj)
-        elif obj.__class__.__name__ == "UserDevices":
-            if obj in self.user_devices:
-                self.user_devices.remove(obj)
-        elif obj.__class__.__name__ == "Roles":
-            if obj in self.roles:
-                self.roles.remove(obj)
-        elif obj.__class__.__name__ == "Permissions":
-            if obj in self.permissions:
-                self.permissions.remove(obj)
-        elif obj.__class__.__name__ == "RolePermission":
-            if obj in self.role_permissions:
-                self.role_permissions.remove(obj)
-        elif obj.__class__.__name__ == "UserRole":
-            if obj in self.user_roles:
-                self.user_roles.remove(obj)
+        model_collections = {
+            "Users": self.users,
+            "UserStates": self.user_states,
+            "UserSessions": self.user_sessions,
+            "UserDevices": self.user_devices,
+            "Roles": self.roles,
+            "Permissions": self.permissions,
+            "RolePermission": self.role_permissions,
+            "UserRole": self.user_roles
+        }
+        
+        collection = model_collections.get(obj.__class__.__name__)
+        if collection is not None and obj in collection:
+            collection.remove(obj)
     
     # Métodos de configuración para tests
     def set_commit_fail(self, should_fail=True, error_message="DB commit failed"):
