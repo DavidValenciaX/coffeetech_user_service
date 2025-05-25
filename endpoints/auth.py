@@ -4,9 +4,9 @@ from dataBase import get_db_session
 from use_cases.login_use_case import LoginUseCase
 from use_cases.register_user_use_case import RegisterUserUseCase
 from use_cases.verify_email_use_case import VerifyEmailUseCase
-from use_cases.forgot_password_use_case import forgot_password
-from use_cases.verify_reset_token_use_case import verify_reset_token
-from use_cases.reset_password_use_case import reset_password
+from use_cases.forgot_password_use_case import ForgotPasswordUseCase
+from use_cases.verify_reset_token_use_case import VerifyResetTokenUseCase
+from use_cases.reset_password_use_case import ResetPasswordUseCase
 from use_cases.change_password_use_case import change_password
 from use_cases.logout_use_case import logout
 from use_cases.delete_account_use_case import delete_account
@@ -68,7 +68,8 @@ def forgot_password_endpoint(request: PasswordResetRequest, db: Session = Depend
     to the user's email address.
     Returns an error if the email is not found in the database.
     """
-    return forgot_password(request, db)
+    use_case = ForgotPasswordUseCase(db)
+    return use_case.execute(request)
 
 @router.post("/verify-reset-token")
 def verify_token(request: VerifyTokenRequest):
@@ -81,7 +82,8 @@ def verify_token(request: VerifyTokenRequest):
     Returns a success message if the token is valid, allowing the user to proceed
     with password reset. Returns an error if the token is invalid or expired.
     """
-    return verify_reset_token(request.token)
+    use_case = VerifyResetTokenUseCase()
+    return use_case.execute(request.token)
 
 @router.post("/reset-password")
 def reset_password_endpoint(reset: PasswordReset, db: Session = Depends(get_db_session)):
@@ -97,7 +99,8 @@ def reset_password_endpoint(reset: PasswordReset, db: Session = Depends(get_db_s
     Returns an error if passwords don't match, the new password is weak,
     or the token is invalid/expired.
     """
-    return reset_password(reset, db)
+    use_case = ResetPasswordUseCase(db)
+    return use_case.execute(reset)
 
 @router.post("/login")
 def login_endpoint(request: LoginRequest, db: Session = Depends(get_db_session)):

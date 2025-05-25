@@ -1,40 +1,63 @@
 from utils.response import create_response
-from use_cases.forgot_password_use_case import reset_tokens
-import datetime
-import pytz
+from domain.services import password_reset_token_service
 import logging
 
-bogota_tz = pytz.timezone("America/Bogota")
 logger = logging.getLogger(__name__)
 
-def verify_reset_token(token: str):
+
+class VerifyResetTokenUseCase:
     """
-    Verifica si un token de restablecimiento de contraseña es válido y no ha expirado.
+    Caso de uso para verificar la validez de un token de restablecimiento de contraseña.
     
-    Args:
-        token (str): Token de restablecimiento de contraseña a verificar
-        
-    Returns:
-        dict: Respuesta con el resultado de la verificación
+    Responsabilidades:
+    - Verificar que el token existe
+    - Verificar que el token no ha expirado
+    - Retornar el resultado de la verificación
     """
-    logger.info("Iniciando la verificación del token: %s", token)
-    logger.debug("Estado actual de reset_tokens: %s", reset_tokens)
-
-    token_info = reset_tokens.get(token)
-
-    if token_info:
-        logger.info("Token encontrado: %s", token)
-
-        current_time = datetime.datetime.now(bogota_tz)
-        expires_at = token_info['expires_at']
-        logger.debug("Hora actual: %s, Expira a: %s", current_time, expires_at)
-
-        if current_time > expires_at:
-            logger.info("El token ha expirado: %s", token)
-            return create_response("error", "Token ha expirado")
-
-        logger.info("Token válido, puede proceder a restablecer la contraseña.")
-        return create_response("success", "Token válido. Puede proceder a restablecer la contraseña.")
-
-    logger.warning("Token inválido o expirado: %s", token)
-    return create_response("error", "Token inválido o expirado") 
+    
+    def __init__(self):
+        self.token_service = password_reset_token_service
+    
+    def execute(self, token: str) -> dict:
+        """
+        Verifica si un token de restablecimiento de contraseña es válido y no ha expirado.
+        
+        Args:
+            token: Token de restablecimiento de contraseña a verificar
+            
+        Returns:
+            dict: Respuesta con el resultado de la verificación
+        """
+        logger.info("Iniciando la verificación del token: %s", token)
+        
+        # Verificar si el token es válido
+        if self._is_token_valid(token):
+            logger.info("Token válido, puede proceder a restablecer la contraseña.")
+            return create_response("success", "Token válido. Puede proceder a restablecer la contraseña.")
+        else:
+            logger.warning("Token inválido o expirado: %s", token)
+            return create_response("error", "Token inválido o expirado")
+    
+    def _is_token_valid(self, token: str) -> bool:
+        """
+        Verifica si un token es válido utilizando el servicio de tokens.
+        
+        Args:
+            token: Token a verificar
+            
+        Returns:
+            bool: True si el token es válido, False en caso contrario
+        """
+        return self.token_service.is_token_valid(token)
+    
+    def get_token_info(self, token: str) -> dict:
+        """
+        Obtiene información detallada sobre un token.
+        
+        Args:
+            token: Token del cual obtener información
+            
+        Returns:
+            dict: Información del token o None si no existe
+        """
+        return self.token_service.get_token_info(token)

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Body, Query
+from fastapi import APIRouter, Depends, HTTPException, Body
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 from models.models import Roles, UserRole, Roles, Users, UserDevices
