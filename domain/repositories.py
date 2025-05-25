@@ -8,6 +8,11 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+class UserStateNotFoundError(Exception):
+    """Exception raised when a required user state is not found in the database."""
+    pass
+
+
 class UserRepository:
     """Repositorio responsable de las operaciones de base de datos de usuarios."""
     
@@ -56,7 +61,7 @@ class UserRepository:
             
             user_registry_state = self.get_unverified_state()
             if not user_registry_state:
-                raise Exception("No se encontró el estado 'No Verificado' para usuarios")
+                raise UserStateNotFoundError("No se encontró el estado 'No Verificado' para usuarios")
             
             new_user = Users(
                 name=name,
