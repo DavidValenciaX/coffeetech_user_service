@@ -13,6 +13,7 @@ from .verify_email_use_case import VerifyEmailUseCase
 from .change_password_use_case import ChangePasswordUseCase
 from .delete_account_use_case import DeleteAccountUseCase
 from .logout_use_case import LogoutUseCase
+from .update_profile_use_case import UpdateProfileUseCase
 
 __all__ = [
     "LoginUseCase",
@@ -21,5 +22,6 @@ __all__ = [
     "VerifyEmailUseCase",
     "ChangePasswordUseCase",
     "DeleteAccountUseCase",
-    "LogoutUseCase"
+    "LogoutUseCase",
+    "UpdateProfileUseCase"
 ] 
