@@ -7,7 +7,7 @@ import pytest
 import json
 from unittest.mock import Mock, patch
 from sqlalchemy.orm import Session
-from domain.user_repository import UserStateNotFoundError
+from domain.repositories.user_state_repository import UserStateNotFoundError
 from models.models import Users, UserStates
 from fastapi import HTTPException
 from fastapi.responses import ORJSONResponse

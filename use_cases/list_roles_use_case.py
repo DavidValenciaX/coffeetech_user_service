@@ -1,5 +1,5 @@
 from fastapi import HTTPException
-from domain.role_repository import RoleRepository
+from domain.repositories import RoleRepository
 import logging
 
 logger = logging.getLogger(__name__)

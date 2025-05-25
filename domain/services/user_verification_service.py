@@ -1,7 +1,7 @@
 from typing import Optional, Dict, Any
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
-from domain.user_repository import UserRepository
+from domain.repositories import UserRepository
 from domain.services.session_token_service import verify_session_token
 from models.models import Users
 import logging

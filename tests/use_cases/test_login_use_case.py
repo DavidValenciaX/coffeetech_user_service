@@ -10,7 +10,7 @@ import orjson
 
 from use_cases.login_use_case import LoginUseCase
 from tests.mockdb import MockDB, UserSessions, Users, UserDevices, UserStates
-from domain.user_state_repository import UserStateConstants
+from domain.repositories.user_state_repository import UserStateConstants
 
 @pytest.fixture
 def mock_db_session():

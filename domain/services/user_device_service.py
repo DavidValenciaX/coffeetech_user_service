@@ -1,7 +1,7 @@
 from typing import List, Dict, Any
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
-from domain.user_device_repository import UserDeviceRepository
+from domain.repositories import UserDeviceRepository
 import logging
 
 logger = logging.getLogger(__name__)

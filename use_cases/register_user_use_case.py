@@ -1,7 +1,7 @@
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from domain.user_validator import UserValidator
-from domain.user_repository import UserRepository
+from domain.repositories import UserRepository
 from domain.services import NotificationService
 from utils.response import create_response
 import logging

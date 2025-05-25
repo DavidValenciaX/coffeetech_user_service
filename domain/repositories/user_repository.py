@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from models.models import Users
 from utils.security import hash_password
 from utils.verification_token import generate_verification_token
-from domain.user_state_repository import UserStateRepository, UserStateConstants, UserStateNotFoundError
+from .user_state_repository import UserStateRepository, UserStateConstants, UserStateNotFoundError
 import logging
 
 logger = logging.getLogger(__name__)
