@@ -1,6 +1,7 @@
 from utils.response import create_response
 from domain.services import password_reset_token_service
 import logging
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +19,7 @@ class VerifyResetTokenUseCase:
     def __init__(self):
         self.token_service = password_reset_token_service
     
-    def execute(self, token: str) -> dict:
+    def execute(self, token: Optional[str]) -> dict:
         """
         Verifica si un token de restablecimiento de contraseña es válido y no ha expirado.
         
