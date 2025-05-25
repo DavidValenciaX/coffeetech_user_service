@@ -3,6 +3,9 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+class EmailSendError(Exception):
+    """Raised when there is an error sending an email."""
+    pass
 
 class NotificationService:
     """Servicio responsable de enviar notificaciones a los usuarios."""
@@ -24,7 +27,7 @@ class NotificationService:
             logger.info(f"Email de verificación enviado a: {email}")
         except Exception as e:
             logger.error(f"Error al enviar email de verificación a {email}: {str(e)}")
-            raise Exception(f"Error al enviar correo de verificación: {str(e)}")
+            raise EmailSendError(f"Error al enviar correo de verificación: {str(e)}")
     
     @staticmethod
     def send_welcome_email(email: str) -> None:
@@ -43,4 +46,4 @@ class NotificationService:
             logger.info(f"Email de bienvenida enviado a: {email}")
         except Exception as e:
             logger.error(f"Error al enviar email de bienvenida a {email}: {str(e)}")
-            raise Exception(f"Error al enviar correo de bienvenida: {str(e)}") 
+            raise EmailSendError(f"Error al enviar correo de bienvenida: {str(e)}") 
