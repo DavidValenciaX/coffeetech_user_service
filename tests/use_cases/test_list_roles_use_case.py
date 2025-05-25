@@ -6,7 +6,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../.
 import pytest
 from unittest.mock import MagicMock, patch
 from fastapi import HTTPException
-from use_cases.list_roles_use_case import list_roles
+from use_cases.list_roles_use_case import ListRolesUseCase
 
 
 class TestListRolesUseCase:
@@ -49,7 +49,7 @@ class TestListRolesUseCase:
         mock_db.query().all.return_value = [mock_role1, mock_role2]
         
         # Act
-        result = list_roles(mock_db)
+        result = ListRolesUseCase(mock_db).execute()
         
         # Assert
         assert result["status"] == "success"
@@ -75,7 +75,7 @@ class TestListRolesUseCase:
         mock_db.query().all.return_value = []
         
         # Act
-        result = list_roles(mock_db)
+        result = ListRolesUseCase(mock_db).execute()
         
         # Assert
         assert result["status"] == "success"
@@ -90,7 +90,7 @@ class TestListRolesUseCase:
         
         # Act & Assert
         with pytest.raises(HTTPException) as exc_info:
-            list_roles(mock_db)
+            ListRolesUseCase(mock_db).execute()
         
         assert exc_info.value.status_code == 500
         assert "Error al obtener los roles" in str(exc_info.value.detail)
@@ -108,7 +108,7 @@ class TestListRolesUseCase:
         mock_db.query().all.return_value = [mock_role]
         
         # Act
-        result = list_roles(mock_db)
+        result = ListRolesUseCase(mock_db).execute()
         
         # Assert
         assert result["status"] == "success"
