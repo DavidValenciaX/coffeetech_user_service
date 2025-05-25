@@ -120,7 +120,7 @@ class TestDeleteAccountUseCase:
         use_case = DeleteAccountUseCase(mock_db_session)
         
         # Act
-        response_obj = use_case.execute('')
+        response_obj = use_case.execute(None)
         response = orjson.loads(response_obj.body)
         
         # Assert
@@ -154,7 +154,7 @@ class TestDeleteAccountUseCase:
         
         # Mock the delete method to raise an exception
         def failing_delete(obj):
-            raise Exception("Database connection lost")
+            raise ConnectionError("Database connection lost")
         mock_db_session.delete = failing_delete
         
         use_case = DeleteAccountUseCase(mock_db_session)
@@ -201,7 +201,7 @@ class TestDeleteAccountUseCase:
         
         assert len(sessions_before) > 0
         assert len(devices_before) > 0
-        # roles_before might be empty depending on test setup
+        assert len(roles_before) > 0
         
         use_case = DeleteAccountUseCase(mock_db_session)
         
@@ -287,7 +287,7 @@ class TestDeleteAccountUseCase:
         
         # Mock the delete method to raise an exception
         def failing_delete(obj):
-            raise Exception("Database connection lost")
+            raise ConnectionError("Database connection lost")
         mock_db_session.delete = failing_delete
         
         use_case = DeleteAccountUseCase(mock_db_session)
@@ -373,7 +373,7 @@ class TestDeleteAccountUseCase:
         original_error_message = "Specific database constraint violation"
         
         def failing_delete(obj):
-            raise Exception(original_error_message)
+            raise ConnectionError(original_error_message)
         mock_db_session.delete = failing_delete
         
         use_case = DeleteAccountUseCase(mock_db_session)

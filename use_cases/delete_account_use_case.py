@@ -3,6 +3,7 @@ from utils.security import verify_session_token
 from utils.response import create_response, session_token_invalid_response
 from domain.repositories import UserRepository
 import logging
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +15,7 @@ class DeleteAccountUseCase:
         self.db = db
         self.user_repository = UserRepository(db)
 
-    def execute(self, session_token: str):
+    def execute(self, session_token: Optional[str]):
         token_preview = session_token[:8] if session_token else "None"
         logger.info(f"Iniciando proceso de eliminación de cuenta para token: {token_preview}...")
         # Verify the session token and get the user
