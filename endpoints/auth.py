@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from dataBase import get_db_session
 from use_cases.login_use_case import LoginUseCase
 from use_cases.register_user_use_case import RegisterUserUseCase
-from use_cases.verify_email_use_case import verify_email
+from use_cases.verify_email_use_case import VerifyEmailUseCase
 from use_cases.forgot_password_use_case import forgot_password
 from use_cases.verify_reset_token_use_case import verify_reset_token
 from use_cases.reset_password_use_case import reset_password
@@ -54,7 +54,8 @@ def verify_email_endpoint(request: VerifyTokenRequest, db: Session = Depends(get
     Updates the user's state to "Verified" if the token is valid.
     Returns an error if the token is invalid or expired.
     """
-    return verify_email(request.token, db)
+    use_case = VerifyEmailUseCase(db)
+    return use_case.execute(request.token)
 
 @router.post("/forgot-password")
 def forgot_password_endpoint(request: PasswordResetRequest, db: Session = Depends(get_db_session)):
@@ -69,7 +70,7 @@ def forgot_password_endpoint(request: PasswordResetRequest, db: Session = Depend
     """
     return forgot_password(request, db)
 
-@router.post("/verify-reset-token") # Renamed from /verify-token
+@router.post("/verify-reset-token")
 def verify_token(request: VerifyTokenRequest):
     """
     Verifies if a password reset token is valid and has not expired.

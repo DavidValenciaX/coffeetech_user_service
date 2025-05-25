@@ -31,6 +31,18 @@ class UserRepository:
         """
         return self.db.query(Users).filter(Users.email == email).first()
     
+    def find_by_verification_token(self, token: str) -> Optional[Users]:
+        """
+        Busca un usuario por token de verificación.
+        
+        Args:
+            token: Token de verificación
+            
+        Returns:
+            Usuario encontrado o None
+        """
+        return self.db.query(Users).filter(Users.verification_token == token).first()
+    
     def get_unverified_state(self) -> Optional[UserStates]:
         """
         Obtiene el estado 'No Verificado'.
@@ -39,6 +51,15 @@ class UserRepository:
             Estado de usuario no verificado o None
         """
         return get_user_state(self.db, "No Verificado")
+    
+    def get_verified_state(self) -> Optional[UserStates]:
+        """
+        Obtiene el estado 'Verificado'.
+        
+        Returns:
+            Estado de usuario verificado o None
+        """
+        return get_user_state(self.db, "Verificado")
     
     def create_user(self, name: str, email: str, password: str) -> Users:
         """
@@ -113,6 +134,33 @@ class UserRepository:
         except Exception as e:
             self.db.rollback()
             logger.error(f"Error al actualizar usuario: {str(e)}")
+            raise
+    
+    def verify_user_email(self, user: Users) -> None:
+        """
+        Marca un usuario como verificado.
+        
+        Args:
+            user: Usuario a verificar
+            
+        Raises:
+            UserStateNotFoundError: Si no se encuentra el estado verificado
+            Exception: Si hay error al actualizar el usuario
+        """
+        try:
+            verified_state = self.get_verified_state()
+            if not verified_state:
+                raise UserStateNotFoundError("No se encontró el estado 'Verificado' para usuarios")
+            
+            user.verification_token = None
+            user.user_state_id = verified_state.user_state_id
+            
+            self.db.commit()
+            logger.info(f"Usuario verificado exitosamente: {user.email}")
+            
+        except Exception as e:
+            self.db.rollback()
+            logger.error(f"Error al verificar el correo para el usuario {user.email}: {str(e)}")
             raise
     
     def is_user_unverified(self, user: Users) -> bool:
