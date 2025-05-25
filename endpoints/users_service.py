@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, Body
 from sqlalchemy.orm import Session
-from sqlalchemy.exc import SQLAlchemyError
-from models.models import Roles, UserRole, Users, UserDevices
 from dataBase import get_db_session
-from domain.services.session_token_service import verify_session_token
+from domain.services.user_role_service import UserRoleService
+from domain.services.user_verification_service import UserVerificationService
+from domain.services.user_device_service import UserDeviceService
 from utils.response import create_response
 from domain.schemas import (
     UserRoleCreateRequest,
@@ -18,104 +18,93 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
+INTERNAL_SERVER_ERROR_MSG = "Error interno del servidor"
+
 @router.get("/user-role-ids/{user_id}", include_in_schema=False)
 def get_user_role_ids(user_id: int, db: Session = Depends(get_db_session)):
     """
     Devuelve una lista de user_role_id asociados a un usuario.
     """
-    user_roles = db.query(UserRole).filter(UserRole.user_id == user_id).all()
-    user_role_ids = [ur.user_role_id for ur in user_roles]
-    return {"user_role_ids": user_role_ids}
+    try:
+        service = UserRoleService(db)
+        user_role_ids = service.get_user_role_ids(user_id)
+        return {"user_role_ids": user_role_ids}
+    except Exception as e:
+        logger.error(f"Error in get_user_role_ids: {str(e)}")
+        raise HTTPException(status_code=500, detail=INTERNAL_SERVER_ERROR_MSG)
 
 @router.post("/user-role", status_code=201, include_in_schema=False)
 def create_user_role(request: UserRoleCreateRequest, db: Session = Depends(get_db_session)):
     """
     Crea la relación UserRole (usuario-rol) y retorna el id.
     """
-    # Buscar el rol por nombre
-    role = db.query(Roles).filter(Roles.name == request.role_name).first()
-    if not role:
-        raise HTTPException(status_code=400, detail=f"Rol '{request.role_name}' no encontrado")
-    # Verificar si ya existe la relación
-    user_role = db.query(UserRole).filter(
-        UserRole.user_id == request.user_id,
-        UserRole.role_id == role.role_id
-    ).first()
-    if not user_role:
-        user_role = UserRole(user_id=request.user_id, role_id=role.role_id)
-        db.add(user_role)
-        db.commit()
-        db.refresh(user_role)
-    return {"user_role_id": user_role.user_role_id}
+    try:
+        service = UserRoleService(db)
+        user_role_id = service.create_user_role(request.user_id, request.role_name)
+        return {"user_role_id": user_role_id}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error in create_user_role: {str(e)}")
+        raise HTTPException(status_code=500, detail=INTERNAL_SERVER_ERROR_MSG)
 
 @router.get("/user-role/{user_role_id}", include_in_schema=False)
 def get_user_role(user_role_id: int, db: Session = Depends(get_db_session)):
     """
     Get role information for a specific UserRole by ID
     """
-    user_role = db.query(UserRole).filter(UserRole.user_role_id == user_role_id).first()
-    if not user_role:
-        raise HTTPException(status_code=404, detail=f"UserRole with ID {user_role_id} not found")
-        
-    role = db.query(Roles).filter(Roles.role_id == user_role.role_id).first()
-    
-    return {
-        "user_role_id": user_role.user_role_id,
-        "user_id": user_role.user_id,
-        "role_id": user_role.role_id,
-        "role_name": role.name if role else "Unknown"
-    }
+    try:
+        service = UserRoleService(db)
+        user_role_info = service.get_user_role_info(user_role_id)
+        return user_role_info
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error in get_user_role: {str(e)}")
+        raise HTTPException(status_code=500, detail=INTERNAL_SERVER_ERROR_MSG)
 
 @router.get("/user-role/{user_role_id}/permissions", include_in_schema=False)
 def get_user_role_permissions(user_role_id: int, db: Session = Depends(get_db_session)):
     """
     Devuelve la lista de permisos (name, description, permission_id) asociados a un user_role_id.
     """
-    user_role = db.query(UserRole).filter(UserRole.user_role_id == user_role_id).first()
-    if not user_role:
-        raise HTTPException(status_code=404, detail=f"UserRole con ID {user_role_id} no encontrado")
-    role = db.query(Roles).filter(Roles.role_id == user_role.role_id).first()
-    if not role:
-        raise HTTPException(status_code=404, detail=f"Role con ID {user_role.role_id} no encontrado")
-    permissions = [
-        {
-            "permission_id": perm.permission.permission_id,
-            "name": perm.permission.name,
-            "description": perm.permission.description
-        } for perm in role.permissions
-    ]
-    return {"permissions": permissions}
+    try:
+        service = UserRoleService(db)
+        permissions = service.get_user_role_permissions(user_role_id)
+        return {"permissions": permissions}
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error in get_user_role_permissions: {str(e)}")
+        raise HTTPException(status_code=500, detail=INTERNAL_SERVER_ERROR_MSG)
 
 @router.post("/user-role/bulk-info", include_in_schema=False)
 def bulk_user_role_info(request: BulkUserRoleInfoRequest, db: Session = Depends(get_db_session)):
     """
     Devuelve información de usuario y rol para una lista de user_role_ids.
     """
-    user_roles = db.query(UserRole).filter(UserRole.user_role_id.in_(request.user_role_ids)).all()
-    collaborators = []
-    for ur in user_roles:
-        user = db.query(Users).filter(Users.user_id == ur.user_id).first()
-        role = db.query(Roles).filter(Roles.role_id == ur.role_id).first()
-        if user and role:
-            collaborators.append({
-                "user_role_id": ur.user_role_id,
-                "user_id": user.user_id,
-                "user_name": user.name,
-                "user_email": user.email,
-                "role_id": role.role_id,
-                "role_name": role.name
-            })
-    return {"collaborators": collaborators}
+    try:
+        service = UserRoleService(db)
+        collaborators = service.get_bulk_user_role_info(request.user_role_ids)
+        return {"collaborators": collaborators}
+    except Exception as e:
+        logger.error(f"Error in bulk_user_role_info: {str(e)}")
+        raise HTTPException(status_code=500, detail=INTERNAL_SERVER_ERROR_MSG)
 
 @router.get("/{role_id}/name", include_in_schema=False)
 def get_role_name_by_id(role_id: int, db: Session = Depends(get_db_session)):
     """
     Devuelve el nombre de un rol dado su ID.
     """
-    role = db.query(Roles).filter(Roles.role_id == role_id).first()
-    if not role:
-        raise HTTPException(status_code=404, detail=f"Rol con ID {role_id} no encontrado")
-    return {"role_name": role.name}
+    try:
+        service = UserRoleService(db)
+        role_name = service.get_role_name_by_id(role_id)
+        return {"role_name": role_name}
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error in get_role_name_by_id: {str(e)}")
+        raise HTTPException(status_code=500, detail=INTERNAL_SERVER_ERROR_MSG)
 
 @router.post("/user-role/{user_role_id}/update-role", include_in_schema=False)
 def update_user_role(user_role_id: int, body: dict = Body(...), db: Session = Depends(get_db_session)):
@@ -126,35 +115,34 @@ def update_user_role(user_role_id: int, body: dict = Body(...), db: Session = De
     if not new_role_id:
         raise HTTPException(status_code=400, detail="El ID del nuevo rol es requerido")
     
-    # Verificar si el user_role existe
-    user_role = db.query(UserRole).filter(UserRole.user_role_id == user_role_id).first()
-    if not user_role:
-        raise HTTPException(status_code=404, detail=f"UserRole con ID {user_role_id} no encontrado")
-    
-    # Verificar si el nuevo rol existe
-    role = db.query(Roles).filter(Roles.role_id == new_role_id).first()
-    if not role:
-        raise HTTPException(status_code=400, detail=f"Rol con ID {new_role_id} no encontrado")
-    
-    # Actualizar el role_id
-    user_role.role_id = role.role_id
-    db.commit()
-    db.refresh(user_role)
-    
-    # Devolver el nombre del rol actualizado para la respuesta
-    return {"status": "success", "message": f"Rol actualizado a '{role.name}'"}
+    try:
+        service = UserRoleService(db)
+        role_name = service.update_user_role(user_role_id, new_role_id)
+        return {"status": "success", "message": f"Rol actualizado a '{role_name}'"}
+    except ValueError as e:
+        # Determinar el código de error apropiado basado en el mensaje
+        if "UserRole" in str(e):
+            raise HTTPException(status_code=404, detail=str(e))
+        else:
+            raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error in update_user_role: {str(e)}")
+        raise HTTPException(status_code=500, detail=INTERNAL_SERVER_ERROR_MSG)
 
 @router.post("/user-role/{user_role_id}/delete", include_in_schema=False)
 def delete_user_role(user_role_id: int, db: Session = Depends(get_db_session)):
     """
     Elimina la relación UserRole (usuario-rol) especificada por user_role_id.
     """
-    user_role = db.query(UserRole).filter(UserRole.user_role_id == user_role_id).first()
-    if not user_role:
-        raise HTTPException(status_code=404, detail=f"UserRole con ID {user_role_id} no encontrado")
-    db.delete(user_role)
-    db.commit()
-    return {"status": "success", "message": f"UserRole con ID {user_role_id} eliminado correctamente"}
+    try:
+        service = UserRoleService(db)
+        service.delete_user_role(user_role_id)
+        return {"status": "success", "message": f"UserRole con ID {user_role_id} eliminado correctamente"}
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error in delete_user_role: {str(e)}")
+        raise HTTPException(status_code=500, detail=INTERNAL_SERVER_ERROR_MSG)
 
 @router.post("/session-token-verification", include_in_schema=False)
 def verify_token(request: TokenVerificationRequest, db: Session = Depends(get_db_session)):
@@ -169,18 +157,23 @@ def verify_token(request: TokenVerificationRequest, db: Session = Depends(get_db
     - **200 OK**: Token válido, se devuelve información del usuario.
     - **401 Unauthorized**: Token inválido o no encontrado.
     """
-    user = verify_session_token(request.session_token, db)
-    if not user:
-        logger.warning("Token de sesión inválido o usuario no encontrado")
-        return create_response("error", "Token de sesión inválido o usuario no encontrado", status_code=401)
-    
-    return create_response("success", "Token de sesión válido", {
-        "user": UserResponse(
-            user_id=user.user_id,
-            name=user.name,
-            email=user.email
-        )
-    })
+    try:
+        service = UserVerificationService(db)
+        user = service.verify_session_token(request.session_token)
+        
+        return create_response("success", "Token de sesión válido", {
+            "user": UserResponse(
+                user_id=user.user_id,
+                name=user.name,
+                email=user.email
+            )
+        })
+    except ValueError as e:
+        logger.warning(f"Token verification failed: {str(e)}")
+        return create_response("error", str(e), status_code=401)
+    except Exception as e:
+        logger.error(f"Error in verify_token: {str(e)}")
+        return create_response("error", INTERNAL_SERVER_ERROR_MSG, status_code=500)
 
 @router.post("/user-verification-by-email", include_in_schema=False)
 def user_verification_by_email(request: UserVerificationByEmailRequest, db: Session = Depends(get_db_session)):
@@ -189,16 +182,14 @@ def user_verification_by_email(request: UserVerificationByEmailRequest, db: Sess
     Retorna el objeto usuario si existe, None si no.
     """
     try:
-        user = db.query(Users).filter(Users.email == request.email).first()
-        if user:
+        service = UserVerificationService(db)
+        user_data = service.verify_user_by_email(request.email)
+        
+        if user_data:
             return {
                 "status": "success",
                 "data": {
-                    "user": {
-                        "user_id": user.user_id,
-                        "name": user.name,
-                        "email": user.email
-                    }
+                    "user": user_data
                 }
             }
         else:
@@ -206,7 +197,7 @@ def user_verification_by_email(request: UserVerificationByEmailRequest, db: Sess
                 "status": "error",
                 "message": "Usuario no encontrado"
             }
-    except SQLAlchemyError as e:
+    except Exception as e:
         logger.error(f"Error al verificar usuario por email: {str(e)}")
         return {
             "status": "error",
@@ -226,19 +217,17 @@ def get_user_by_id(user_id: int, db: Session = Depends(get_db_session)):
         User information if found
     """
     try:
-        user = db.query(Users).filter(Users.user_id == user_id).first()
-        if not user:
+        service = UserVerificationService(db)
+        user_data = service.get_user_by_id(user_id)
+        
+        if not user_data:
             logger.warning(f"Usuario con ID {user_id} no encontrado")
             return create_response("error", "Usuario no encontrado", status_code=404)
         
         return create_response("success", "Usuario encontrado", data={
-            "user": {
-                "user_id": user.user_id,
-                "name": user.name,
-                "email": user.email
-            }
+            "user": user_data
         })
-    except SQLAlchemyError as e:
+    except Exception as e:
         logger.error(f"Error al consultar usuario por ID: {str(e)}")
         return create_response("error", "Error interno al consultar el usuario", status_code=500)
 
@@ -255,16 +244,9 @@ def get_user_devices_by_id(user_id: int, db: Session = Depends(get_db_session)):
         List of device objects with user_device_id, user_id, and fcm_token
     """
     try:
-        devices = db.query(UserDevices).filter(UserDevices.user_id == user_id).all()
-        device_list = [
-            {
-                "user_device_id": device.user_device_id,
-                "user_id": device.user_id,
-                "fcm_token": device.fcm_token
-            }
-            for device in devices
-        ]
+        service = UserDeviceService(db)
+        device_list = service.get_user_devices(user_id)
         return create_response("success", f"Found {len(device_list)} devices", data=device_list)
-    except SQLAlchemyError as e:
+    except Exception as e:
         logger.error(f"Error retrieving devices for user {user_id}: {str(e)}")
         return create_response("error", "Error al obtener dispositivos del usuario", status_code=500)
