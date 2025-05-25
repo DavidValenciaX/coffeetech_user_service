@@ -6,7 +6,7 @@ class UserValidator:
     """Clase responsable de validar los datos de usuario."""
     
     @staticmethod
-    def validate_name(name: str) -> Optional[str]:
+    def validate_name(name: Optional[str]) -> Optional[str]:
         """
         Valida el nombre del usuario.
         
