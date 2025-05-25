@@ -1,7 +1,7 @@
 from fastapi import HTTPException
 from models.models import Users, UserSessions, UserDevices
 from utils.security import verify_password
-from domain.services.token_service import generate_verification_token
+from domain.services.verify_session_token_service import generate_verification_token
 from domain.services import email_service
 from utils.response import create_response
 from domain.user_state_repository import UserStateRepository, UserStateConstants

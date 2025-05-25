@@ -2,7 +2,7 @@ from typing import Optional
 from sqlalchemy.orm import Session
 from models.models import Users
 from utils.security import hash_password
-from domain.services.token_service import generate_verification_token
+from domain.services.verify_session_token_service import generate_verification_token
 from domain.user_state_repository import UserStateRepository, UserStateConstants, UserStateNotFoundError
 import logging
 
