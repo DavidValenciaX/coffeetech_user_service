@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from utils.response import create_response
 from fastapi import HTTPException
-from domain.repositories import UserRepository, UserStateNotFoundError
+from domain.user_repository import UserRepository, UserStateNotFoundError
 from domain.services import NotificationService
 import logging
 

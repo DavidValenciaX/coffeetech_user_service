@@ -1,6 +1,6 @@
 from typing import Optional
 from sqlalchemy.orm import Session
-from models.models import Users, UserStates, Roles
+from models.models import Users, UserStates
 from utils.security import hash_password
 from domain.services.token_service import generate_verification_token
 import logging
@@ -194,16 +194,3 @@ class UserRepository:
         """
         unverified_state = self.get_unverified_state()
         return unverified_state and user.user_state_id == unverified_state.user_state_id 
-
-class RoleRepository:
-    """Repositorio responsable de las operaciones de base de datos de roles."""
-    def __init__(self, db: Session):
-        self.db = db
-
-    def list_roles_with_permissions(self):
-        """
-        Obtiene todos los roles y sus permisos asociados.
-        Returns:
-            List[Roles]: Lista de roles con sus permisos cargados
-        """
-        return self.db.query(Roles).all() 

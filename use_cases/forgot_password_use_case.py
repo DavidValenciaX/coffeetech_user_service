@@ -4,7 +4,7 @@ from models.models import Users
 from domain.services.token_service import generate_verification_token
 from utils.response import create_response
 from domain.services import NotificationService, password_reset_token_service
-from domain.repositories import UserRepository
+from domain.user_repository import UserRepository
 import logging
 
 logger = logging.getLogger(__name__)

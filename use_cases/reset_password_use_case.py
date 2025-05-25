@@ -5,7 +5,7 @@ from utils.security import hash_password
 from utils.response import create_response
 from domain.validators import UserValidator
 from domain.services import password_reset_token_service
-from domain.repositories import UserRepository
+from domain.user_repository import UserRepository
 import logging
 
 logger = logging.getLogger(__name__)

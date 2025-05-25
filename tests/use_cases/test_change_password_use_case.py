@@ -4,7 +4,7 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 
 import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 from fastapi import HTTPException
 import orjson
 

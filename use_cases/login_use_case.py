@@ -4,7 +4,7 @@ from utils.security import verify_password
 from domain.services.token_service import generate_verification_token
 from domain.services import email_service
 from utils.response import create_response
-from domain.repositories import get_user_state
+from domain.user_repository import get_user_state
 import logging
 
 logger = logging.getLogger(__name__)

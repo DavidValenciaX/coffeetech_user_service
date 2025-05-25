@@ -6,7 +6,7 @@ que encapsulan la lógica de negocio del sistema de usuarios.
 """
 
 from .validators import UserValidator
-from .repositories import UserRepository
+from .user_repository import UserRepository
 from .services import NotificationService
 from .services import EmailService, email_service
 

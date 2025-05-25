@@ -1,7 +1,7 @@
 from fastapi import HTTPException
 from domain.services.token_service import verify_session_token
 from utils.response import create_response, session_token_invalid_response
-from domain.repositories import UserRepository
+from domain.user_repository import UserRepository
 from domain.validators import UserValidator
 import logging
 
