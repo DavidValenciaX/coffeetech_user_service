@@ -7,7 +7,7 @@ from use_cases.verify_email_use_case import VerifyEmailUseCase
 from use_cases.forgot_password_use_case import ForgotPasswordUseCase
 from use_cases.verify_reset_token_use_case import VerifyResetTokenUseCase
 from use_cases.reset_password_use_case import ResetPasswordUseCase
-from use_cases.change_password_use_case import change_password
+from use_cases.change_password_use_case import ChangePasswordUseCase
 from use_cases.logout_use_case import logout
 from use_cases.delete_account_use_case import delete_account
 from use_cases.update_profile_use_case import update_profile
@@ -136,7 +136,8 @@ def change_password_endpoint(change: PasswordChange, session_token: str, db: Ses
     Returns an error if the session token is invalid, the current password is incorrect,
     or the new password is weak.
     """
-    return change_password(change, session_token, db)
+    use_case = ChangePasswordUseCase(db)
+    return use_case.execute(change, session_token)
 
 @router.post("/logout")
 def logout_endpoint(request: LogoutRequest, db: Session = Depends(get_db_session)):
