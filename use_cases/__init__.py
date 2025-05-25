@@ -7,7 +7,6 @@ presentation layer (endpoints).
 """
 
 from .login_use_case import LoginUseCase
-from .list_roles_use_case import ListRolesUseCase
 from .register_user_use_case import RegisterUserUseCase
 from .verify_email_use_case import VerifyEmailUseCase
 from .change_password_use_case import ChangePasswordUseCase
@@ -17,7 +16,6 @@ from .update_profile_use_case import UpdateProfileUseCase
 
 __all__ = [
     "LoginUseCase",
-    "ListRolesUseCase",
     "RegisterUserUseCase",
     "VerifyEmailUseCase",
     "ChangePasswordUseCase",

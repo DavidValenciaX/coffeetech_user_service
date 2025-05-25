@@ -4,6 +4,7 @@ from .password_reset_token_service import PasswordResetTokenService, password_re
 from .user_role_service import UserRoleService
 from .user_verification_service import UserVerificationService
 from .user_device_service import UserDeviceService
+from .role_service import RoleService
 
 __all__ = [
     'EmailService', 
@@ -14,5 +15,6 @@ __all__ = [
     'password_reset_token_service',
     'UserRoleService',
     'UserVerificationService',
-    'UserDeviceService'
+    'UserDeviceService',
+    'RoleService'
 ] 

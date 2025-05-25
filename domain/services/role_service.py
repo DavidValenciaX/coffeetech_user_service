@@ -4,14 +4,20 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-class ListRolesUseCase:
+class RoleService:
     """
-    Caso de uso para listar todos los roles y sus permisos asociados.
+    Servicio responsable de las operaciones relacionadas con roles.
     """
     def __init__(self, db):
         self.role_repository = RoleRepository(db)
 
-    def execute(self):
+    def list_roles_with_permissions(self):
+        """
+        Lista todos los roles y sus permisos asociados.
+        
+        Returns:
+            dict: Diccionario con el estado, mensaje y datos de los roles
+        """
         try:
             logger.info("Iniciando consulta de roles y permisos")
             roles = self.role_repository.list_roles_with_permissions()
