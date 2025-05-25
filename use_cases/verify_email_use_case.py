@@ -1,5 +1,4 @@
 from sqlalchemy.orm import Session
-from models.models import Users
 from utils.response import create_response
 from fastapi import HTTPException
 from domain.repositories import UserRepository, UserStateNotFoundError
@@ -66,24 +65,3 @@ class VerifyEmailUseCase:
         except Exception as e:
             logger.error(f"Error inesperado al verificar el correo: {str(e)}")
             raise HTTPException(status_code=500, detail=f"Error al verificar el correo: {str(e)}")
-
-
-# Legacy function for backward compatibility (deprecated)
-def verify_email(token: str, db: Session):
-    """
-    Legacy function for email verification.
-    
-    DEPRECATED: Use VerifyEmailUseCase instead.
-    
-    Args:
-        token (str): Token de verificación del usuario
-        db (Session): Sesión de base de datos
-        
-    Returns:
-        dict: Respuesta con el resultado de la verificación
-        
-    Raises:
-        HTTPException: Si ocurre un error durante la verificación
-    """
-    use_case = VerifyEmailUseCase(db)
-    return use_case.execute(token) 

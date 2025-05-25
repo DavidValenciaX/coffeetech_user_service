@@ -9,17 +9,17 @@ presentation layer (endpoints).
 from .login_use_case import LoginUseCase
 from .list_roles_use_case import list_roles
 from .register_user_use_case import RegisterUserUseCase
-from .verify_email_use_case import verify_email
+from .verify_email_use_case import VerifyEmailUseCase
 from .change_password_use_case import ChangePasswordUseCase
-from .delete_account_use_case import delete_account
+from .delete_account_use_case import DeleteAccountUseCase
 from .logout_use_case import LogoutUseCase
 
 __all__ = [
     "LoginUseCase",
     "list_roles",
     "RegisterUserUseCase",
-    "verify_email",
+    "VerifyEmailUseCase",
     "ChangePasswordUseCase",
-    "delete_account",
+    "DeleteAccountUseCase",
     "LogoutUseCase"
 ] 

@@ -149,6 +149,3 @@ class ChangePasswordUseCase:
                 status_code=500, 
                 detail=f"Error al cambiar la contraseña: {str(e)}"
             )
-
-
- 
