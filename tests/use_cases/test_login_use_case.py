@@ -127,7 +127,7 @@ def test_login_user_not_found(mock_db_session):
     assert not mock_db_session.committed
 
 @patch('use_cases.login_use_case.verify_password')
-@patch('use_cases.login_use_case.send_email')
+@patch('use_cases.login_use_case.email_service.send_verification_email')
 @patch('use_cases.login_use_case.generate_verification_token')
 @patch('use_cases.login_use_case.get_user_state')
 def test_login_email_not_verified(mock_get_user_state, mock_generate_token, mock_send_email, mock_verify_password, mock_db_session):
@@ -152,6 +152,7 @@ def test_login_email_not_verified(mock_get_user_state, mock_generate_token, mock
     mock_get_user_state.side_effect = lambda db, state_name: verified_state if state_name == "Verificado" else None
     mock_generate_token.return_value = 'new_token'
     mock_verify_password.return_value = True
+    mock_send_email.return_value = True
 
     login_request = MagicMock()
     login_request.email = 'unverified@example.com'
@@ -170,11 +171,11 @@ def test_login_email_not_verified(mock_get_user_state, mock_generate_token, mock
     updated_user = mock_db_session.query(Users).filter(lambda u: u.email == 'unverified@example.com').first()
     assert updated_user.verification_token == 'new_token'
     
-    mock_send_email.assert_called_once_with('unverified@example.com', 'new_token', 'verification')
+    mock_send_email.assert_called_once_with('unverified@example.com', 'new_token')
     assert mock_db_session.committed # Commit should be called to save the new token
 
 @patch('use_cases.login_use_case.verify_password')
-@patch('use_cases.login_use_case.send_email')
+@patch('use_cases.login_use_case.email_service.send_verification_email')
 @patch('use_cases.login_use_case.generate_verification_token')
 @patch('use_cases.login_use_case.get_user_state')
 def test_login_verified_state_not_found(mock_get_user_state, mock_generate_token, mock_send_email, mock_verify_password, mock_db_session):
@@ -196,6 +197,7 @@ def test_login_verified_state_not_found(mock_get_user_state, mock_generate_token
     mock_get_user_state.return_value = None
     mock_generate_token.return_value = 'new_token'
     mock_verify_password.return_value = True
+    mock_send_email.return_value = True
 
     login_request = MagicMock()
     login_request.email = 'test@example.com'
@@ -213,11 +215,11 @@ def test_login_verified_state_not_found(mock_get_user_state, mock_generate_token
     updated_user = mock_db_session.query(Users).filter(lambda u: u.email == 'test@example.com').first()
     assert updated_user.verification_token == 'new_token'
 
-    mock_send_email.assert_called_once_with('test@example.com', 'new_token', 'verification')
+    mock_send_email.assert_called_once_with('test@example.com', 'new_token')
     assert mock_db_session.committed
 
 @patch('use_cases.login_use_case.verify_password')
-@patch('use_cases.login_use_case.send_email')
+@patch('use_cases.login_use_case.email_service.send_verification_email')
 @patch('use_cases.login_use_case.generate_verification_token')
 @patch('use_cases.login_use_case.get_user_state')
 def test_login_email_not_verified_send_fail(mock_get_user_state, mock_generate_token, mock_send_email_fails, mock_verify_password, mock_db_session):
@@ -241,7 +243,7 @@ def test_login_email_not_verified_send_fail(mock_get_user_state, mock_generate_t
     mock_get_user_state.return_value = verified_state 
     mock_generate_token.return_value = 'new_token'
     mock_verify_password.return_value = True
-    mock_send_email_fails.side_effect = Exception("Email send failed")
+    mock_send_email_fails.return_value = False
 
     login_request = MagicMock()
     login_request.email = 'unverified@example.com'
@@ -260,7 +262,7 @@ def test_login_email_not_verified_send_fail(mock_get_user_state, mock_generate_t
     updated_user = mock_db_session.query(Users).filter(lambda u: u.email == 'unverified@example.com').first()
     assert updated_user.verification_token == 'new_token' 
     
-    mock_send_email_fails.assert_called_once_with('unverified@example.com', 'new_token', 'verification')
+    mock_send_email_fails.assert_called_once_with('unverified@example.com', 'new_token')
     # The use case calls commit() before send_email(), then rollback() if send_email() fails.
     assert mock_db_session.committed # Commit was called before the exception
     assert mock_db_session.rolled_back # Rollback was called after the exception

@@ -1,7 +1,7 @@
 from fastapi import HTTPException
 from models.models import Users, UserSessions, UserDevices
 from utils.security import verify_password, generate_verification_token
-from utils.email import send_email
+from domain.services import email_service
 from utils.response import create_response
 from utils.state import get_user_state
 import logging
@@ -36,7 +36,9 @@ class LoginUseCase:
             new_verification_token = generate_verification_token(4)
             user.verification_token = new_verification_token
             self.db.commit()
-            send_email(user.email, new_verification_token, 'verification')
+            success = email_service.send_verification_email(user.email, new_verification_token)
+            if not success:
+                raise RuntimeError("Failed to send verification email")
             return True
         except Exception as e:
             self.db.rollback()
