@@ -1,6 +1,4 @@
 import argon2
-import random
-import string
 
 # Create Argon2 password hasher with recommended settings
 ph = argon2.PasswordHasher()
@@ -35,17 +33,4 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
         return False
     except argon2.exceptions.InvalidHash:
         return False
-
-def generate_verification_token(length: int=3) -> str:
-    """
-    Genera un token de verificación aleatorio.
-
-    Args:
-        length (int): La longitud del token. Por defecto es 3.
-
-    Returns:
-        str: Un token de verificación aleatorio compuesto por letras y dígitos.
-    """
-    characters = string.ascii_letters + string.digits  # Letras mayúsculas, minúsculas y dígitos
-    return ''.join(random.choices(characters, k=length))
 

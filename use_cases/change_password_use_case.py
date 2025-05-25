@@ -1,6 +1,6 @@
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
-from domain.repositories import verify_session_token
+from domain.services.token_service import verify_session_token
 from utils.security import verify_password, hash_password
 from utils.response import create_response, session_token_invalid_response
 from domain.validators import UserValidator
