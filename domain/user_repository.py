@@ -39,18 +39,6 @@ class UserRepository:
         """
         return self.db.query(Users).filter(Users.verification_token == token).first()
     
-    def get_user_state_by_name(self, state_name: str):
-        """
-        Obtiene un estado de usuario por nombre.
-        
-        Args:
-            state_name: Nombre del estado a obtener
-            
-        Returns:
-            Estado de usuario encontrado o None
-        """
-        return self.user_state_repository.get_user_state_by_name(state_name)
-    
     def create_user(self, name: str, email: str, password: str) -> Users:
         """
         Crea un nuevo usuario en la base de datos.
@@ -70,7 +58,7 @@ class UserRepository:
             password_hash = hash_password(password)
             verification_token = generate_verification_token(4)
             
-            user_registry_state = self.get_user_state_by_name(UserStateConstants.UNVERIFIED)
+            user_registry_state = self.user_state_repository.get_user_state_by_name(UserStateConstants.UNVERIFIED)
             if not user_registry_state:
                 raise UserStateNotFoundError(f"No se encontró el estado '{UserStateConstants.UNVERIFIED}' para usuarios")
             
@@ -138,7 +126,7 @@ class UserRepository:
             Exception: Si hay error al actualizar el usuario
         """
         try:
-            verified_state = self.get_user_state_by_name(UserStateConstants.VERIFIED)
+            verified_state = self.user_state_repository.get_user_state_by_name(UserStateConstants.VERIFIED)
             if not verified_state:
                 raise UserStateNotFoundError(f"No se encontró el estado '{UserStateConstants.VERIFIED}' para usuarios")
             
@@ -163,5 +151,5 @@ class UserRepository:
         Returns:
             True si el usuario está no verificado, False en caso contrario
         """
-        unverified_state = self.get_user_state_by_name(UserStateConstants.UNVERIFIED)
+        unverified_state = self.user_state_repository.get_user_state_by_name(UserStateConstants.UNVERIFIED)
         return unverified_state and user.user_state_id == unverified_state.user_state_id 
