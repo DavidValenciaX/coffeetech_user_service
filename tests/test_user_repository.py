@@ -140,9 +140,10 @@ class TestUserRepository:
         result = self.repository.update_unverified_user(mock_user, "New Name", "new_password")
         
         # Assert
-        assert mock_user.name == "New Name"
-        assert mock_user.password_hash == "new_hashed_password"
-        assert mock_user.verification_token == "new_verification_token"
+        assert result == mock_user
+        assert result.name == "New Name"
+        assert result.password_hash == "new_hashed_password"
+        assert result.verification_token == "new_verification_token"
         self.mock_db.commit.assert_called_once()
         self.mock_db.refresh.assert_called_once_with(mock_user)
     
