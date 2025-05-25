@@ -66,7 +66,7 @@ def sample_user(mock_db_session):
 class TestDeleteAccountUseCase:
     """Test suite for DeleteAccountUseCase."""
 
-    @patch('domain.services.token_service.verify_session_token')
+    @patch('use_cases.delete_account_use_case.verify_session_token')
     def test_delete_account_success(self, mock_verify_session_token, mock_db_session, sample_user):
         """Test successful account deletion."""
         # Arrange
@@ -92,7 +92,7 @@ class TestDeleteAccountUseCase:
         # but in our mock, we need to simulate this behavior
         mock_verify_session_token.assert_called_once_with('valid_session_token', mock_db_session)
 
-    @patch('domain.services.token_service.verify_session_token')
+    @patch('use_cases.delete_account_use_case.verify_session_token')
     def test_delete_account_invalid_session_token(self, mock_verify_session_token, mock_db_session):
         """Test account deletion with invalid session token."""
         # Arrange
@@ -111,7 +111,7 @@ class TestDeleteAccountUseCase:
         
         mock_verify_session_token.assert_called_once_with('invalid_session_token', mock_db_session)
 
-    @patch('domain.services.token_service.verify_session_token')
+    @patch('use_cases.delete_account_use_case.verify_session_token')
     def test_delete_account_empty_session_token(self, mock_verify_session_token, mock_db_session):
         """Test account deletion with empty session token."""
         # Arrange
@@ -128,7 +128,7 @@ class TestDeleteAccountUseCase:
         assert response["message"] == "Credenciales expiradas, cerrando sesión."
         assert not mock_db_session.committed
 
-    @patch('domain.services.token_service.verify_session_token')
+    @patch('use_cases.delete_account_use_case.verify_session_token')
     def test_delete_account_none_session_token(self, mock_verify_session_token, mock_db_session):
         """Test account deletion with None session token."""
         # Arrange
@@ -145,7 +145,7 @@ class TestDeleteAccountUseCase:
         assert response["message"] == "Credenciales expiradas, cerrando sesión."
         assert not mock_db_session.committed
 
-    @patch('domain.services.token_service.verify_session_token')
+    @patch('use_cases.delete_account_use_case.verify_session_token')
     def test_delete_account_database_error_on_delete(self, mock_verify_session_token, 
                                                    mock_db_session, sample_user):
         """Test account deletion with database error during delete operation."""
@@ -167,7 +167,7 @@ class TestDeleteAccountUseCase:
         assert "Error eliminando cuenta" in str(exc_info.value.detail)
         assert mock_db_session.rolled_back
 
-    @patch('domain.services.token_service.verify_session_token')
+    @patch('use_cases.delete_account_use_case.verify_session_token')
     def test_delete_account_database_error_on_commit(self, mock_verify_session_token, 
                                                    mock_db_session, sample_user):
         """Test account deletion with database error during commit operation."""
@@ -187,7 +187,7 @@ class TestDeleteAccountUseCase:
         assert "Error eliminando cuenta" in str(exc_info.value.detail)
         assert mock_db_session.rolled_back
 
-    @patch('domain.services.token_service.verify_session_token')
+    @patch('use_cases.delete_account_use_case.verify_session_token')
     def test_delete_account_with_related_data(self, mock_verify_session_token, 
                                             mock_db_session, sample_user):
         """Test account deletion when user has related data (sessions, devices, roles)."""
@@ -217,7 +217,7 @@ class TestDeleteAccountUseCase:
         # In a real scenario with CASCADE DELETE, related records would be deleted automatically
         # Our mock doesn't implement CASCADE, but the test verifies the main operation succeeds
 
-    @patch('domain.services.token_service.verify_session_token')
+    @patch('use_cases.delete_account_use_case.verify_session_token')
     def test_delete_account_user_repository_initialization(self, mock_verify_session_token, 
                                                          mock_db_session, sample_user):
         """Test that UserRepository is properly initialized in the use case."""
@@ -231,7 +231,7 @@ class TestDeleteAccountUseCase:
         assert use_case.user_repository is not None
         assert use_case.user_repository.db == mock_db_session
 
-    @patch('domain.services.token_service.verify_session_token')
+    @patch('use_cases.delete_account_use_case.verify_session_token')
     def test_delete_account_logging_behavior(self, mock_verify_session_token, 
                                            mock_db_session, sample_user):
         """Test that appropriate logging occurs during account deletion."""
@@ -257,7 +257,7 @@ class TestDeleteAccountUseCase:
             assert any("Iniciando proceso de eliminación de cuenta" in call for call in log_calls)
             assert any("Cuenta eliminada exitosamente" in call for call in log_calls)
 
-    @patch('domain.services.token_service.verify_session_token')
+    @patch('use_cases.delete_account_use_case.verify_session_token')
     def test_delete_account_logging_on_invalid_token(self, mock_verify_session_token, mock_db_session):
         """Test that appropriate warning logging occurs for invalid tokens."""
         # Arrange
@@ -278,7 +278,7 @@ class TestDeleteAccountUseCase:
             warning_calls = [call.args[0] for call in mock_logger.warning.call_args_list]
             assert any("Token de sesión inválido durante eliminación de cuenta" in call for call in warning_calls)
 
-    @patch('domain.services.token_service.verify_session_token')
+    @patch('use_cases.delete_account_use_case.verify_session_token')
     def test_delete_account_logging_on_error(self, mock_verify_session_token, 
                                            mock_db_session, sample_user):
         """Test that appropriate error logging occurs when deletion fails."""
@@ -302,7 +302,7 @@ class TestDeleteAccountUseCase:
             error_calls = [call.args[0] for call in mock_logger.error.call_args_list]
             assert any("Error eliminando cuenta" in call for call in error_calls)
 
-    @patch('domain.services.token_service.verify_session_token')
+    @patch('use_cases.delete_account_use_case.verify_session_token')
     def test_delete_account_token_truncation_in_logs(self, mock_verify_session_token, mock_db_session):
         """Test that session tokens are properly truncated in log messages for security."""
         # Arrange
@@ -327,7 +327,7 @@ class TestDeleteAccountUseCase:
             truncated_token = long_token[:8]
             assert any(truncated_token in message for message in all_log_messages)
 
-    @patch('domain.services.token_service.verify_session_token')
+    @patch('use_cases.delete_account_use_case.verify_session_token')
     def test_delete_account_multiple_sessions_same_user(self, mock_verify_session_token, 
                                                       mock_db_session, sample_user):
         """Test account deletion when user has multiple active sessions."""
@@ -364,7 +364,7 @@ class TestDeleteAccountUseCase:
         assert hasattr(use_case.user_repository, 'db')
         assert use_case.user_repository.db == mock_db_session
 
-    @patch('domain.services.token_service.verify_session_token')
+    @patch('use_cases.delete_account_use_case.verify_session_token')
     def test_delete_account_exception_handling_preserves_original_error(self, mock_verify_session_token, 
                                                                        mock_db_session, sample_user):
         """Test that the original exception details are preserved in the HTTPException."""

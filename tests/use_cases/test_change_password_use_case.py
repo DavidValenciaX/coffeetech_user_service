@@ -58,7 +58,7 @@ def password_change_request():
 class TestChangePasswordUseCase:
     """Test suite for ChangePasswordUseCase."""
 
-    @patch('domain.services.token_service.verify_session_token')
+    @patch('use_cases.change_password_use_case.verify_session_token')
     @patch('use_cases.change_password_use_case.verify_password')
     @patch('use_cases.change_password_use_case.hash_password')
     def test_change_password_success(self, mock_hash_password, mock_verify_password, 
@@ -89,7 +89,7 @@ class TestChangePasswordUseCase:
         mock_verify_password.assert_called_once_with('current_password123', '$argon2id$v=19$m=65536,t=3,p=4$hashed_password')
         mock_hash_password.assert_called_once_with('NewPassword123!')
 
-    @patch('domain.services.token_service.verify_session_token')
+    @patch('use_cases.change_password_use_case.verify_session_token')
     def test_change_password_invalid_session_token(self, mock_verify_session_token, 
                                                  mock_db_session, password_change_request):
         """Test password change with invalid session token."""
@@ -107,7 +107,7 @@ class TestChangePasswordUseCase:
         assert response["message"] == "Credenciales expiradas, cerrando sesión."
         assert not mock_db_session.committed
 
-    @patch('domain.services.token_service.verify_session_token')
+    @patch('use_cases.change_password_use_case.verify_session_token')
     @patch('use_cases.change_password_use_case.verify_password')
     def test_change_password_incorrect_current_password(self, mock_verify_password, 
                                                       mock_verify_session_token, 
@@ -129,7 +129,7 @@ class TestChangePasswordUseCase:
         assert response["message"] == "Credenciales incorrectas"
         assert not mock_db_session.committed
 
-    @patch('domain.services.token_service.verify_session_token')
+    @patch('use_cases.change_password_use_case.verify_session_token')
     @patch('use_cases.change_password_use_case.verify_password')
     def test_change_password_weak_new_password(self, mock_verify_password, 
                                              mock_verify_session_token, 
@@ -155,7 +155,7 @@ class TestChangePasswordUseCase:
         assert "La contraseña debe tener al menos 8 caracteres" in response["message"]
         assert not mock_db_session.committed
 
-    @patch('domain.services.token_service.verify_session_token')
+    @patch('use_cases.change_password_use_case.verify_session_token')
     @patch('use_cases.change_password_use_case.verify_password')
     def test_change_password_missing_uppercase(self, mock_verify_password, 
                                              mock_verify_session_token, 
@@ -181,7 +181,7 @@ class TestChangePasswordUseCase:
         assert "La contraseña debe incluir al menos una letra mayúscula" in response["message"]
         assert not mock_db_session.committed
 
-    @patch('domain.services.token_service.verify_session_token')
+    @patch('use_cases.change_password_use_case.verify_session_token')
     @patch('use_cases.change_password_use_case.verify_password')
     def test_change_password_missing_lowercase(self, mock_verify_password, 
                                              mock_verify_session_token, 
@@ -207,7 +207,7 @@ class TestChangePasswordUseCase:
         assert "La contraseña debe incluir al menos una letra minúscula" in response["message"]
         assert not mock_db_session.committed
 
-    @patch('domain.services.token_service.verify_session_token')
+    @patch('use_cases.change_password_use_case.verify_session_token')
     @patch('use_cases.change_password_use_case.verify_password')
     def test_change_password_missing_number(self, mock_verify_password, 
                                           mock_verify_session_token, 
@@ -233,7 +233,7 @@ class TestChangePasswordUseCase:
         assert "La contraseña debe incluir al menos un número" in response["message"]
         assert not mock_db_session.committed
 
-    @patch('domain.services.token_service.verify_session_token')
+    @patch('use_cases.change_password_use_case.verify_session_token')
     @patch('use_cases.change_password_use_case.verify_password')
     def test_change_password_missing_special_char(self, mock_verify_password, 
                                                  mock_verify_session_token, 
@@ -259,7 +259,7 @@ class TestChangePasswordUseCase:
         assert "La contraseña debe incluir al menos un carácter especial" in response["message"]
         assert not mock_db_session.committed
 
-    @patch('domain.services.token_service.verify_session_token')
+    @patch('use_cases.change_password_use_case.verify_session_token')
     @patch('use_cases.change_password_use_case.verify_password')
     @patch('use_cases.change_password_use_case.hash_password')
     def test_change_password_database_commit_error(self, mock_hash_password, 
@@ -286,7 +286,7 @@ class TestChangePasswordUseCase:
         assert "Error al cambiar la contraseña" in str(exc_info.value.detail)
         assert mock_db_session.rolled_back
 
-    @patch('domain.services.token_service.verify_session_token')
+    @patch('use_cases.change_password_use_case.verify_session_token')
     @patch('use_cases.change_password_use_case.verify_password')
     @patch('use_cases.change_password_use_case.hash_password')
     def test_change_password_hash_generation_error(self, mock_hash_password, 
@@ -314,7 +314,7 @@ class TestChangePasswordUseCase:
         """Test the _validate_session_token method directly."""
         use_case = ChangePasswordUseCase(mock_db_session)
         
-        with patch('domain.services.token_service.verify_session_token') as mock_verify:
+        with patch('use_cases.change_password_use_case.verify_session_token') as mock_verify:
             # Test valid token
             mock_verify.return_value = sample_user
             result = use_case._validate_session_token('valid_token')
@@ -382,7 +382,7 @@ class TestChangePasswordUseCase:
         assert "Database error" in str(exc_info.value)
         assert mock_db_session.rolled_back
 
-    @patch('domain.services.token_service.verify_session_token')
+    @patch('use_cases.change_password_use_case.verify_session_token')
     @patch('use_cases.change_password_use_case.verify_password')
     @patch('use_cases.change_password_use_case.hash_password')
     def test_change_password_edge_case_empty_passwords(self, mock_hash_password, 
@@ -410,7 +410,7 @@ class TestChangePasswordUseCase:
         assert "La contraseña debe tener al menos 8 caracteres" in response["message"]
         assert not mock_db_session.committed
 
-    @patch('domain.services.token_service.verify_session_token')
+    @patch('use_cases.change_password_use_case.verify_session_token')
     @patch('use_cases.change_password_use_case.verify_password')
     @patch('use_cases.change_password_use_case.hash_password')
     def test_change_password_with_unicode_characters(self, mock_hash_password, 

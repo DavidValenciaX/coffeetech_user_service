@@ -45,7 +45,7 @@ def sample_user_and_session(mock_db_session):
     
     return user, session
 
-@patch('domain.services.token_service.verify_session_token')
+@patch('use_cases.update_profile_use_case.verify_session_token')
 def test_update_profile_success(mock_verify_session, mock_db_session, sample_user_and_session):
     """Test successful profile update with valid data"""
     # Arrange
@@ -74,7 +74,7 @@ def test_update_profile_success(mock_verify_session, mock_db_session, sample_use
     # Verify verify_session_token was called with correct parameters
     mock_verify_session.assert_called_once_with(session_token, mock_db_session)
 
-@patch('domain.services.token_service.verify_session_token')
+@patch('use_cases.update_profile_use_case.verify_session_token')
 def test_update_profile_invalid_session_token(mock_verify_session, mock_db_session):
     """Test profile update with invalid session token"""
     # Arrange
@@ -98,7 +98,7 @@ def test_update_profile_invalid_session_token(mock_verify_session, mock_db_sessi
     # Verify verify_session_token was called
     mock_verify_session.assert_called_once_with(session_token, mock_db_session)
 
-@patch('domain.services.token_service.verify_session_token')
+@patch('use_cases.update_profile_use_case.verify_session_token')
 def test_update_profile_empty_name(mock_verify_session, mock_db_session, sample_user_and_session):
     """Test profile update with empty name"""
     # Arrange
@@ -124,7 +124,7 @@ def test_update_profile_empty_name(mock_verify_session, mock_db_session, sample_
     # Verify commit was not called
     assert not mock_db_session.committed
 
-@patch('domain.services.token_service.verify_session_token')
+@patch('use_cases.update_profile_use_case.verify_session_token')
 def test_update_profile_whitespace_only_name(mock_verify_session, mock_db_session, sample_user_and_session):
     """Test profile update with whitespace-only name"""
     # Arrange
@@ -147,7 +147,7 @@ def test_update_profile_whitespace_only_name(mock_verify_session, mock_db_sessio
     original_user = mock_db_session.query(Users).filter(lambda u: u.user_id == 1).first()
     assert original_user.name == 'Original Name'
 
-@patch('domain.services.token_service.verify_session_token')
+@patch('use_cases.update_profile_use_case.verify_session_token')
 def test_update_profile_name_too_short(mock_verify_session, mock_db_session, sample_user_and_session):
     """Test profile update with name that's too short (should succeed since no length validation exists)"""
     # Arrange
@@ -170,7 +170,7 @@ def test_update_profile_name_too_short(mock_verify_session, mock_db_session, sam
     updated_user = mock_db_session.query(Users).filter(lambda u: u.user_id == 1).first()
     assert updated_user.name == 'A'
 
-@patch('domain.services.token_service.verify_session_token')
+@patch('use_cases.update_profile_use_case.verify_session_token')
 def test_update_profile_name_too_long(mock_verify_session, mock_db_session, sample_user_and_session):
     """Test profile update with name that's too long (should succeed since no length validation exists)"""
     # Arrange
@@ -194,7 +194,7 @@ def test_update_profile_name_too_long(mock_verify_session, mock_db_session, samp
     updated_user = mock_db_session.query(Users).filter(lambda u: u.user_id == 1).first()
     assert updated_user.name == long_name
 
-@patch('domain.services.token_service.verify_session_token')
+@patch('use_cases.update_profile_use_case.verify_session_token')
 def test_update_profile_name_with_numbers(mock_verify_session, mock_db_session, sample_user_and_session):
     """Test profile update with name containing numbers (should succeed since no character validation exists)"""
     # Arrange
@@ -217,7 +217,7 @@ def test_update_profile_name_with_numbers(mock_verify_session, mock_db_session, 
     updated_user = mock_db_session.query(Users).filter(lambda u: u.user_id == 1).first()
     assert updated_user.name == 'John123'
 
-@patch('domain.services.token_service.verify_session_token')
+@patch('use_cases.update_profile_use_case.verify_session_token')
 def test_update_profile_name_with_special_characters(mock_verify_session, mock_db_session, sample_user_and_session):
     """Test profile update with name containing special characters (should succeed since no character validation exists)"""
     # Arrange
@@ -240,7 +240,7 @@ def test_update_profile_name_with_special_characters(mock_verify_session, mock_d
     updated_user = mock_db_session.query(Users).filter(lambda u: u.user_id == 1).first()
     assert updated_user.name == 'John@Doe'
 
-@patch('domain.services.token_service.verify_session_token')
+@patch('use_cases.update_profile_use_case.verify_session_token')
 def test_update_profile_valid_name_with_spaces(mock_verify_session, mock_db_session, sample_user_and_session):
     """Test profile update with valid name containing spaces"""
     # Arrange
@@ -263,7 +263,7 @@ def test_update_profile_valid_name_with_spaces(mock_verify_session, mock_db_sess
     updated_user = mock_db_session.query(Users).filter(lambda u: u.user_id == 1).first()
     assert updated_user.name == 'John Doe Smith'
 
-@patch('domain.services.token_service.verify_session_token')
+@patch('use_cases.update_profile_use_case.verify_session_token')
 def test_update_profile_name_with_accents(mock_verify_session, mock_db_session, sample_user_and_session):
     """Test profile update with name containing accented characters"""
     # Arrange
@@ -286,7 +286,7 @@ def test_update_profile_name_with_accents(mock_verify_session, mock_db_session, 
     updated_user = mock_db_session.query(Users).filter(lambda u: u.user_id == 1).first()
     assert updated_user.name == 'José María'
 
-@patch('domain.services.token_service.verify_session_token')
+@patch('use_cases.update_profile_use_case.verify_session_token')
 def test_update_profile_database_error_on_commit(mock_verify_session, mock_db_session, sample_user_and_session):
     """Test profile update when database commit fails"""
     # Arrange
@@ -312,7 +312,7 @@ def test_update_profile_database_error_on_commit(mock_verify_session, mock_db_se
     # Verify rollback was called
     assert mock_db_session.rolled_back
 
-@patch('domain.services.token_service.verify_session_token')
+@patch('use_cases.update_profile_use_case.verify_session_token')
 def test_update_profile_same_name(mock_verify_session, mock_db_session, sample_user_and_session):
     """Test profile update with the same name (should still succeed)"""
     # Arrange
@@ -338,7 +338,7 @@ def test_update_profile_same_name(mock_verify_session, mock_db_session, sample_u
     # Verify commit was called
     assert mock_db_session.committed
 
-@patch('domain.services.token_service.verify_session_token')
+@patch('use_cases.update_profile_use_case.verify_session_token')
 def test_update_profile_minimum_valid_length(mock_verify_session, mock_db_session, sample_user_and_session):
     """Test profile update with minimum valid name length"""
     # Arrange
@@ -361,7 +361,7 @@ def test_update_profile_minimum_valid_length(mock_verify_session, mock_db_sessio
     updated_user = mock_db_session.query(Users).filter(lambda u: u.user_id == 1).first()
     assert updated_user.name == 'Jo'
 
-@patch('domain.services.token_service.verify_session_token')
+@patch('use_cases.update_profile_use_case.verify_session_token')
 def test_update_profile_maximum_valid_length(mock_verify_session, mock_db_session, sample_user_and_session):
     """Test profile update with maximum valid name length"""
     # Arrange
@@ -385,7 +385,7 @@ def test_update_profile_maximum_valid_length(mock_verify_session, mock_db_sessio
     updated_user = mock_db_session.query(Users).filter(lambda u: u.user_id == 1).first()
     assert updated_user.name == max_name
 
-@patch('domain.services.token_service.verify_session_token')
+@patch('use_cases.update_profile_use_case.verify_session_token')
 def test_update_profile_name_with_leading_trailing_spaces(mock_verify_session, mock_db_session, sample_user_and_session):
     """Test profile update with name having leading/trailing spaces (spaces are preserved)"""
     # Arrange
@@ -408,7 +408,7 @@ def test_update_profile_name_with_leading_trailing_spaces(mock_verify_session, m
     updated_user = mock_db_session.query(Users).filter(lambda u: u.user_id == 1).first()
     assert updated_user.name == '  John Doe  '
 
-@patch('domain.services.token_service.verify_session_token')
+@patch('use_cases.update_profile_use_case.verify_session_token')
 def test_update_profile_multiple_consecutive_spaces(mock_verify_session, mock_db_session, sample_user_and_session):
     """Test profile update with name having multiple consecutive spaces"""
     # Arrange
