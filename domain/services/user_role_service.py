@@ -1,7 +1,7 @@
 from typing import List, Dict, Any
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
-from domain.repositories import UserRoleRepository
+from domain.repositories import UserRoleRepository, UserRepository, RoleRepository
 import logging
 
 logger = logging.getLogger(__name__)
@@ -12,6 +12,8 @@ class UserRoleService:
     def __init__(self, db: Session):
         self.db = db
         self.user_role_repository = UserRoleRepository(db)
+        self.user_repository = UserRepository(db)
+        self.role_repository = RoleRepository(db)
     
     def get_user_role_ids(self, user_id: int) -> List[int]:
         """
@@ -27,7 +29,7 @@ class UserRoleService:
             SQLAlchemyError: Si hay error en la base de datos
         """
         try:
-            user_roles = self.user_role_repository.get_by_user_id(user_id)
+            user_roles = self.user_role_repository.find_by_user_id(user_id)
             return [ur.user_role_id for ur in user_roles]
         except SQLAlchemyError as e:
             logger.error(f"Error getting user role IDs for user {user_id}: {str(e)}")
@@ -50,12 +52,12 @@ class UserRoleService:
         """
         try:
             # Buscar el rol por nombre
-            role = self.user_role_repository.get_role_by_name(role_name)
+            role = self.role_repository.find_by_name(role_name)
             if not role:
                 raise ValueError(f"Rol '{role_name}' no encontrado")
             
             # Verificar si ya existe la relación
-            existing_user_role = self.user_role_repository.get_by_user_and_role(user_id, role.role_id)
+            existing_user_role = self.user_role_repository.find_by_user_and_role(user_id, role.role_id)
             if existing_user_role:
                 return existing_user_role.user_role_id
             
@@ -83,11 +85,11 @@ class UserRoleService:
             SQLAlchemyError: Si hay error en la base de datos
         """
         try:
-            user_role = self.user_role_repository.get_by_id(user_role_id)
+            user_role = self.user_role_repository.find_by_id(user_role_id)
             if not user_role:
                 raise ValueError(f"UserRole con ID {user_role_id} no encontrado")
             
-            role = self.user_role_repository.get_role_by_id(user_role.role_id)
+            role = self.role_repository.find_by_id(user_role.role_id)
             
             return {
                 "user_role_id": user_role.user_role_id,
@@ -116,11 +118,11 @@ class UserRoleService:
             SQLAlchemyError: Si hay error en la base de datos
         """
         try:
-            user_role = self.user_role_repository.get_by_id(user_role_id)
+            user_role = self.user_role_repository.find_by_id(user_role_id)
             if not user_role:
                 raise ValueError(f"UserRole con ID {user_role_id} no encontrado")
             
-            role = self.user_role_repository.get_role_by_id(user_role.role_id)
+            role = self.role_repository.find_by_id(user_role.role_id)
             if not role:
                 raise ValueError(f"Role con ID {user_role.role_id} no encontrado")
             
@@ -151,12 +153,12 @@ class UserRoleService:
             SQLAlchemyError: Si hay error en la base de datos
         """
         try:
-            user_roles = self.user_role_repository.get_multiple_by_ids(user_role_ids)
+            user_roles = self.user_role_repository.find_multiple_by_ids(user_role_ids)
             collaborators = []
             
             for ur in user_roles:
-                user = self.user_role_repository.get_user_by_id(ur.user_id)
-                role = self.user_role_repository.get_role_by_id(ur.role_id)
+                user = self.user_repository.find_by_id(ur.user_id)
+                role = self.role_repository.find_by_id(ur.role_id)
                 
                 if user and role:
                     collaborators.append({
@@ -188,7 +190,7 @@ class UserRoleService:
             SQLAlchemyError: Si hay error en la base de datos
         """
         try:
-            role = self.user_role_repository.get_role_by_id(role_id)
+            role = self.role_repository.find_by_id(role_id)
             if not role:
                 raise ValueError(f"Rol con ID {role_id} no encontrado")
             
@@ -216,17 +218,18 @@ class UserRoleService:
         """
         try:
             # Verificar si el user_role existe
-            user_role = self.user_role_repository.get_by_id(user_role_id)
+            user_role = self.user_role_repository.find_by_id(user_role_id)
             if not user_role:
                 raise ValueError(f"UserRole con ID {user_role_id} no encontrado")
             
             # Verificar si el nuevo rol existe
-            role = self.user_role_repository.get_role_by_id(new_role_id)
+            role = self.role_repository.find_by_id(new_role_id)
             if not role:
                 raise ValueError(f"Rol con ID {new_role_id} no encontrado")
             
             # Actualizar el role_id
-            self.user_role_repository.update_role(user_role, new_role_id)
+            update_data = {'role_id': new_role_id}
+            self.user_role_repository.update(user_role, update_data)
             
             return role.name
         except ValueError:
@@ -247,7 +250,7 @@ class UserRoleService:
             SQLAlchemyError: Si hay error en la base de datos
         """
         try:
-            user_role = self.user_role_repository.get_by_id(user_role_id)
+            user_role = self.user_role_repository.find_by_id(user_role_id)
             if not user_role:
                 raise ValueError(f"UserRole con ID {user_role_id} no encontrado")
             

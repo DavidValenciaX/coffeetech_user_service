@@ -20,7 +20,7 @@ class RoleService:
         """
         try:
             logger.info("Iniciando consulta de roles y permisos")
-            roles = self.role_repository.list_roles_with_permissions()
+            roles = self.role_repository.find_all()
             logger.info(f"Se encontraron {len(roles)} roles")
 
             roles_data = []

@@ -45,11 +45,11 @@ class TestRegisterUserUseCase:
         """Test que crea un nuevo usuario exitosamente."""
         # Arrange
         self.use_case.user_validator.validate_user_registration = Mock(return_value=None)
-        self.use_case.user_repository.find_by_email = Mock(return_value=None)
+        self.use_case.user_service.find_user_by_email = Mock(return_value=None)
         
         mock_user = Mock(spec=Users)
         mock_user.verification_token = "token123"
-        self.use_case.user_repository.create_user = Mock(return_value=mock_user)
+        self.use_case.user_service.create_user = Mock(return_value=mock_user)
         self.use_case.notification_service.send_verification_email = Mock()
         
         mock_create_response.return_value = {"status": "success", "message": "Usuario creado"}
@@ -58,7 +58,7 @@ class TestRegisterUserUseCase:
         result = self.use_case.execute(self.mock_user_data)
         
         # Assert
-        self.use_case.user_repository.create_user.assert_called_once_with(
+        self.use_case.user_service.create_user.assert_called_once_with(
             self.mock_user_data.name,
             self.mock_user_data.email,
             self.mock_user_data.password
@@ -76,12 +76,12 @@ class TestRegisterUserUseCase:
         self.use_case.user_validator.validate_user_registration = Mock(return_value=None)
         
         mock_existing_user = Mock(spec=Users)
-        self.use_case.user_repository.find_by_email = Mock(return_value=mock_existing_user)
-        self.use_case.user_repository.is_user_unverified = Mock(return_value=True)
+        self.use_case.user_service.find_user_by_email = Mock(return_value=mock_existing_user)
+        self.use_case.user_service.is_user_unverified = Mock(return_value=True)
         
         mock_updated_user = Mock(spec=Users)
         mock_updated_user.verification_token = "new_token123"
-        self.use_case.user_repository.update_unverified_user = Mock(return_value=mock_updated_user)
+        self.use_case.user_service.update_unverified_user = Mock(return_value=mock_updated_user)
         self.use_case.notification_service.send_verification_email = Mock()
         
         mock_create_response.return_value = {"status": "success", "message": "Usuario actualizado"}
@@ -90,7 +90,7 @@ class TestRegisterUserUseCase:
         result = self.use_case.execute(self.mock_user_data)
         
         # Assert
-        self.use_case.user_repository.update_unverified_user.assert_called_once_with(
+        self.use_case.user_service.update_unverified_user.assert_called_once_with(
             mock_existing_user,
             self.mock_user_data.name,
             self.mock_user_data.password
@@ -108,8 +108,8 @@ class TestRegisterUserUseCase:
         self.use_case.user_validator.validate_user_registration = Mock(return_value=None)
         
         mock_existing_user = Mock(spec=Users)
-        self.use_case.user_repository.find_by_email = Mock(return_value=mock_existing_user)
-        self.use_case.user_repository.is_user_unverified = Mock(return_value=False)
+        self.use_case.user_service.find_user_by_email = Mock(return_value=mock_existing_user)
+        self.use_case.user_service.is_user_unverified = Mock(return_value=False)
         
         mock_create_response.return_value = {"status": "error", "message": "El correo ya está registrado"}
         

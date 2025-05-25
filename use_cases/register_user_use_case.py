@@ -1,8 +1,7 @@
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from domain.user_validator import UserValidator
-from domain.repositories import UserRepository
-from domain.services import NotificationService
+from domain.services import UserService, NotificationService
 from utils.response import create_response
 import logging
 
@@ -19,7 +18,7 @@ class RegisterUserUseCase:
     
     def __init__(self, db: Session):
         self.db = db
-        self.user_repository = UserRepository(db)
+        self.user_service = UserService(db)
         self.notification_service = NotificationService()
         self.user_validator = UserValidator()
     
@@ -43,7 +42,7 @@ class RegisterUserUseCase:
                 return create_response("error", validation_error)
             
             # 2. Verificar si el usuario ya existe
-            existing_user = self.user_repository.find_by_email(user_data.email)
+            existing_user = self.user_service.find_user_by_email(user_data.email)
             
             if existing_user:
                 return self._handle_existing_user(existing_user, user_data)
@@ -85,10 +84,10 @@ class RegisterUserUseCase:
         Returns:
             Response object con el resultado de la operación
         """
-        if self.user_repository.is_user_unverified(existing_user):
+        if self.user_service.is_user_unverified(existing_user):
             try:
                 # Actualizar usuario no verificado
-                updated_user = self.user_repository.update_unverified_user(
+                updated_user = self.user_service.update_unverified_user(
                     existing_user,
                     user_data.name,
                     user_data.password
@@ -126,7 +125,7 @@ class RegisterUserUseCase:
         """
         try:
             # Crear usuario
-            new_user = self.user_repository.create_user(
+            new_user = self.user_service.create_user(
                 user_data.name,
                 user_data.email,
                 user_data.password

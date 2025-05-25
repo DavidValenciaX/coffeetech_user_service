@@ -1,7 +1,7 @@
 from typing import Optional, Dict, Any
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
-from domain.repositories import UserRepository
+from domain.services.user_service import UserService
 from domain.services.session_token_service import verify_session_token
 from models.models import Users
 import logging
@@ -13,7 +13,7 @@ class UserVerificationService:
     
     def __init__(self, db: Session):
         self.db = db
-        self.user_repository = UserRepository(db)
+        self.user_service = UserService(db)
     
     def verify_session_token(self, session_token: str) -> Users:
         """
@@ -53,7 +53,7 @@ class UserVerificationService:
             SQLAlchemyError: Si hay error en la base de datos
         """
         try:
-            user = self.user_repository.find_by_email(email)
+            user = self.user_service.find_user_by_email(email)
             if user:
                 return {
                     "user_id": user.user_id,
@@ -79,14 +79,7 @@ class UserVerificationService:
             SQLAlchemyError: Si hay error en la base de datos
         """
         try:
-            user = self.db.query(Users).filter(Users.user_id == user_id).first()
-            if user:
-                return {
-                    "user_id": user.user_id,
-                    "name": user.name,
-                    "email": user.email
-                }
-            return None
+            return self.user_service.get_user_info(user_id)
         except SQLAlchemyError as e:
             logger.error(f"Error getting user by ID: {str(e)}")
             raise 

@@ -1,19 +1,15 @@
 from typing import Optional
 from sqlalchemy.orm import Session
 from models.models import Users
-from utils.security import hash_password
-from utils.verification_token import generate_verification_token
-from .user_state_repository import UserStateRepository, UserStateConstants, UserStateNotFoundError
 import logging
 
 logger = logging.getLogger(__name__)
 
 class UserRepository:
-    """Repositorio responsable de las operaciones de base de datos de usuarios."""
+    """Repositorio responsable únicamente de las operaciones de persistencia de usuarios."""
     
     def __init__(self, db: Session):
         self.db = db
-        self.user_state_repository = UserStateRepository(db)
     
     def find_by_email(self, email: str) -> Optional[Users]:
         """
@@ -27,6 +23,18 @@ class UserRepository:
         """
         return self.db.query(Users).filter(Users.email == email).first()
     
+    def find_by_id(self, user_id: int) -> Optional[Users]:
+        """
+        Busca un usuario por ID.
+        
+        Args:
+            user_id: ID del usuario
+            
+        Returns:
+            Usuario encontrado o None
+        """
+        return self.db.query(Users).filter(Users.user_id == user_id).first()
+    
     def find_by_verification_token(self, token: str) -> Optional[Users]:
         """
         Busca un usuario por token de verificación.
@@ -39,14 +47,12 @@ class UserRepository:
         """
         return self.db.query(Users).filter(Users.verification_token == token).first()
     
-    def create_user(self, name: str, email: str, password: str) -> Users:
+    def create(self, user_data: dict) -> Users:
         """
         Crea un nuevo usuario en la base de datos.
         
         Args:
-            name: Nombre del usuario
-            email: Email del usuario
-            password: Contraseña en texto plano
+            user_data: Diccionario con los datos del usuario
             
         Returns:
             Usuario creado
@@ -55,26 +61,12 @@ class UserRepository:
             Exception: Si hay error al crear el usuario
         """
         try:
-            password_hash = hash_password(password)
-            verification_token = generate_verification_token(4)
-            
-            user_registry_state = self.user_state_repository.get_user_state_by_name(UserStateConstants.UNVERIFIED)
-            if not user_registry_state:
-                raise UserStateNotFoundError(f"No se encontró el estado '{UserStateConstants.UNVERIFIED}' para usuarios")
-            
-            new_user = Users(
-                name=name,
-                email=email,
-                password_hash=password_hash,
-                verification_token=verification_token,
-                user_state_id=user_registry_state.user_state_id
-            )
-            
+            new_user = Users(**user_data)
             self.db.add(new_user)
             self.db.commit()
             self.db.refresh(new_user)
             
-            logger.info(f"Usuario creado exitosamente: {email}")
+            logger.info(f"Usuario creado exitosamente: {user_data.get('email')}")
             return new_user
             
         except Exception as e:
@@ -82,14 +74,13 @@ class UserRepository:
             logger.error(f"Error al crear usuario: {str(e)}")
             raise
     
-    def update_unverified_user(self, user: Users, name: str, password: str) -> Users:
+    def update(self, user: Users, update_data: dict) -> Users:
         """
-        Actualiza un usuario no verificado con nuevos datos.
+        Actualiza un usuario con nuevos datos.
         
         Args:
             user: Usuario a actualizar
-            name: Nuevo nombre
-            password: Nueva contraseña
+            update_data: Diccionario con los datos a actualizar
             
         Returns:
             Usuario actualizado
@@ -98,10 +89,9 @@ class UserRepository:
             Exception: Si hay error al actualizar el usuario
         """
         try:
-            user.name = name
-            user.password_hash = hash_password(password)
-            verification_token = generate_verification_token(4)
-            user.verification_token = verification_token
+            for key, value in update_data.items():
+                if hasattr(user, key):
+                    setattr(user, key, value)
             
             self.db.commit()
             self.db.refresh(user)
@@ -114,42 +104,22 @@ class UserRepository:
             logger.error(f"Error al actualizar usuario: {str(e)}")
             raise
     
-    def verify_user_email(self, user: Users) -> None:
+    def delete(self, user: Users) -> None:
         """
-        Marca un usuario como verificado.
+        Elimina un usuario de la base de datos.
         
         Args:
-            user: Usuario a verificar
+            user: Usuario a eliminar
             
         Raises:
-            UserStateNotFoundError: Si no se encuentra el estado verificado
-            Exception: Si hay error al actualizar el usuario
+            Exception: Si hay error al eliminar el usuario
         """
         try:
-            verified_state = self.user_state_repository.get_user_state_by_name(UserStateConstants.VERIFIED)
-            if not verified_state:
-                raise UserStateNotFoundError(f"No se encontró el estado '{UserStateConstants.VERIFIED}' para usuarios")
-            
-            user.verification_token = None
-            user.user_state_id = verified_state.user_state_id
-            
+            self.db.delete(user)
             self.db.commit()
-            logger.info(f"Usuario verificado exitosamente: {user.email}")
+            logger.info(f"Usuario eliminado exitosamente: {user.email}")
             
         except Exception as e:
             self.db.rollback()
-            logger.error(f"Error al verificar el correo para el usuario {user.email}: {str(e)}")
-            raise
-    
-    def is_user_unverified(self, user: Users) -> bool:
-        """
-        Verifica si un usuario está en estado 'No Verificado'.
-        
-        Args:
-            user: Usuario a verificar
-            
-        Returns:
-            True si el usuario está no verificado, False en caso contrario
-        """
-        unverified_state = self.user_state_repository.get_user_state_by_name(UserStateConstants.UNVERIFIED)
-        return unverified_state and user.user_state_id == unverified_state.user_state_id 
+            logger.error(f"Error al eliminar usuario: {str(e)}")
+            raise 

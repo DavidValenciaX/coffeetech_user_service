@@ -5,6 +5,7 @@ from .user_role_service import UserRoleService
 from .user_verification_service import UserVerificationService
 from .user_device_service import UserDeviceService
 from .role_service import RoleService
+from .user_service import UserService
 
 __all__ = [
     'EmailService', 
@@ -16,5 +17,6 @@ __all__ = [
     'UserRoleService',
     'UserVerificationService',
     'UserDeviceService',
-    'RoleService'
+    'RoleService',
+    'UserService'
 ] 

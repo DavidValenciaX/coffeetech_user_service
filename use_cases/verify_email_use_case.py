@@ -1,9 +1,8 @@
 from sqlalchemy.orm import Session
 from utils.response import create_response
 from fastapi import HTTPException
-from domain.repositories import UserRepository
+from domain.services import UserService, NotificationService
 from domain.repositories.user_state_repository import UserStateNotFoundError
-from domain.services import NotificationService
 import logging
 
 logger = logging.getLogger(__name__)
@@ -24,7 +23,7 @@ class VerifyEmailUseCase:
     
     def __init__(self, db: Session):
         self.db = db
-        self.user_repository = UserRepository(db)
+        self.user_service = UserService(db)
         self.notification_service = NotificationService()
     
     def execute(self, token: str) -> dict:
@@ -42,13 +41,13 @@ class VerifyEmailUseCase:
         """
         try:
             # Find user by verification token
-            user = self.user_repository.find_by_verification_token(token)
+            user = self.user_service.find_user_by_verification_token(token)
             if not user:
                 logger.warning(f"Token de verificación inválido: {token}")
                 return create_response("error", "Token inválido")
             
             # Verify the user's email
-            self.user_repository.verify_user_email(user)
+            self.user_service.verify_user_email(user)
             
             # Optionally send welcome email
             try:
