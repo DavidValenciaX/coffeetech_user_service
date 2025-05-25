@@ -1,35 +1,12 @@
 from typing import Optional
 from sqlalchemy.orm import Session
-from models.models import Users, UserStates
+from models.models import Users
 from utils.security import hash_password
 from domain.services.token_service import generate_verification_token
+from domain.user_state_repository import UserStateRepository, UserStateConstants, UserStateNotFoundError
 import logging
 
 logger = logging.getLogger(__name__)
-
-
-def get_user_state(db: Session, state_name: str) -> Optional[UserStates]:
-    """
-    Obtiene el estado para la entidad Users.
-    
-    Args:
-        db (Session): Sesión de la base de datos.
-        state_name (str): Nombre del estado a obtener (e.g., "Activo", "Inactivo", "No Verificado", "Verificado").
-        
-    Returns:
-        El objeto UserStates si se encuentra, None en caso contrario.
-    """
-    try:
-        return db.query(UserStates).filter(UserStates.name == state_name).first()
-    except Exception as e:
-        logger.error(f"Error al obtener el estado de usuario '{state_name}': {str(e)}")
-        return None
-
-
-
-class UserStateNotFoundError(Exception):
-    """Exception raised when a required user state is not found in the database."""
-    pass
 
 
 class UserRepository:
@@ -37,6 +14,7 @@ class UserRepository:
     
     def __init__(self, db: Session):
         self.db = db
+        self.user_state_repository = UserStateRepository(db)
     
     def find_by_email(self, email: str) -> Optional[Users]:
         """
@@ -62,23 +40,17 @@ class UserRepository:
         """
         return self.db.query(Users).filter(Users.verification_token == token).first()
     
-    def get_unverified_state(self) -> Optional[UserStates]:
+    def get_user_state_by_name(self, state_name: str):
         """
-        Obtiene el estado 'No Verificado'.
+        Obtiene un estado de usuario por nombre.
         
+        Args:
+            state_name: Nombre del estado a obtener
+            
         Returns:
-            Estado de usuario no verificado o None
+            Estado de usuario encontrado o None
         """
-        return get_user_state(self.db, "No Verificado")
-    
-    def get_verified_state(self) -> Optional[UserStates]:
-        """
-        Obtiene el estado 'Verificado'.
-        
-        Returns:
-            Estado de usuario verificado o None
-        """
-        return get_user_state(self.db, "Verificado")
+        return self.user_state_repository.get_user_state_by_name(state_name)
     
     def create_user(self, name: str, email: str, password: str) -> Users:
         """
@@ -99,9 +71,9 @@ class UserRepository:
             password_hash = hash_password(password)
             verification_token = generate_verification_token(4)
             
-            user_registry_state = self.get_unverified_state()
+            user_registry_state = self.get_user_state_by_name(UserStateConstants.UNVERIFIED)
             if not user_registry_state:
-                raise UserStateNotFoundError("No se encontró el estado 'No Verificado' para usuarios")
+                raise UserStateNotFoundError(f"No se encontró el estado '{UserStateConstants.UNVERIFIED}' para usuarios")
             
             new_user = Users(
                 name=name,
@@ -167,9 +139,9 @@ class UserRepository:
             Exception: Si hay error al actualizar el usuario
         """
         try:
-            verified_state = self.get_verified_state()
+            verified_state = self.get_user_state_by_name(UserStateConstants.VERIFIED)
             if not verified_state:
-                raise UserStateNotFoundError("No se encontró el estado 'Verificado' para usuarios")
+                raise UserStateNotFoundError(f"No se encontró el estado '{UserStateConstants.VERIFIED}' para usuarios")
             
             user.verification_token = None
             user.user_state_id = verified_state.user_state_id
@@ -192,5 +164,5 @@ class UserRepository:
         Returns:
             True si el usuario está no verificado, False en caso contrario
         """
-        unverified_state = self.get_unverified_state()
+        unverified_state = self.get_user_state_by_name(UserStateConstants.UNVERIFIED)
         return unverified_state and user.user_state_id == unverified_state.user_state_id 

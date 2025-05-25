@@ -10,6 +10,7 @@ import orjson
 
 from use_cases.login_use_case import LoginUseCase
 from tests.mockdb import MockDB, UserSessions, Users, UserDevices, UserStates
+from domain.user_state_repository import UserStateConstants
 
 @pytest.fixture
 def mock_db_session():
@@ -19,12 +20,11 @@ def mock_db_session():
 
 @patch('use_cases.login_use_case.verify_password')
 @patch('use_cases.login_use_case.generate_verification_token')
-@patch('use_cases.login_use_case.get_user_state')
-def test_login_success(mock_get_user_state, mock_generate_token, mock_verify_password, mock_db_session):
+def test_login_success(mock_generate_token, mock_verify_password, mock_db_session):
     
     # Arrange
     # Get the "Verificado" state from the mock database
-    verified_state = mock_db_session.query(UserStates).filter(lambda s: s.name == 'Verificado').first()
+    verified_state = mock_db_session.query(UserStates).filter(lambda s: s.name == UserStateConstants.VERIFIED).first()
     
     mock_user_data = Users(
         user_id=1,
@@ -36,8 +36,7 @@ def test_login_success(mock_get_user_state, mock_generate_token, mock_verify_pas
     )
     mock_db_session.add(mock_user_data)
 
-    # Configure mocks to return the verified state, generate a token, and verify the password
-    mock_get_user_state.return_value = verified_state
+    # Configure mocks to generate a token and verify the password
     mock_generate_token.return_value = 'test_session_token'
     mock_verify_password.return_value = True
     
@@ -79,7 +78,7 @@ def test_login_success(mock_get_user_state, mock_generate_token, mock_verify_pas
 def test_login_incorrect_credentials(mock_verify_password, mock_db_session):
     # Arrange
     # Get the "Verificado" state from the mock database 
-    verified_state = mock_db_session.query(UserStates).filter(lambda s: s.name == 'Verificado').first()
+    verified_state = mock_db_session.query(UserStates).filter(lambda s: s.name == UserStateConstants.VERIFIED).first()
     
     mock_user_data = Users(
         user_id=1,
@@ -128,11 +127,10 @@ def test_login_user_not_found(mock_db_session):
 @patch('use_cases.login_use_case.verify_password')
 @patch('use_cases.login_use_case.email_service.send_verification_email')
 @patch('use_cases.login_use_case.generate_verification_token')
-@patch('use_cases.login_use_case.get_user_state')
-def test_login_email_not_verified(mock_get_user_state, mock_generate_token, mock_send_email, mock_verify_password, mock_db_session):
+def test_login_email_not_verified(mock_generate_token, mock_send_email, mock_verify_password, mock_db_session):
     # Arrange
     # Get the "No Verificado" state from the mock database 
-    unverified_state = mock_db_session.query(UserStates).filter(lambda s: s.name == 'No Verificado').first()
+    unverified_state = mock_db_session.query(UserStates).filter(lambda s: s.name == UserStateConstants.UNVERIFIED).first()
     
     unverified_user_data = Users(
         user_id=1,
@@ -144,11 +142,6 @@ def test_login_email_not_verified(mock_get_user_state, mock_generate_token, mock
     )
     mock_db_session.add(unverified_user_data)
 
-    # get_user_state("Verificado") should return the 'Verificado' state object from MockDB
-    verified_state = mock_db_session.query(UserStates).filter(lambda s: s.name == "Verificado").first()
-
-    # Mock the get_user_state function to return the 'Verificado' state object
-    mock_get_user_state.side_effect = lambda db, state_name: verified_state if state_name == "Verificado" else None
     mock_generate_token.return_value = 'new_token'
     mock_verify_password.return_value = True
     mock_send_email.return_value = True
@@ -176,24 +169,22 @@ def test_login_email_not_verified(mock_get_user_state, mock_generate_token, mock
 @patch('use_cases.login_use_case.verify_password')
 @patch('use_cases.login_use_case.email_service.send_verification_email')
 @patch('use_cases.login_use_case.generate_verification_token')
-@patch('use_cases.login_use_case.get_user_state')
-def test_login_verified_state_not_found(mock_get_user_state, mock_generate_token, mock_send_email, mock_verify_password, mock_db_session):
+def test_login_verified_state_not_found(mock_generate_token, mock_send_email, mock_verify_password, mock_db_session):
     # Arrange
-    # Get the "Verificado" state from the mock database
-    verified_state = mock_db_session.query(UserStates).filter(lambda s: s.name == 'Verificado').first()
+    # Get the "No Verificado" state from the mock database (user is not verified)
+    unverified_state = mock_db_session.query(UserStates).filter(lambda s: s.name == UserStateConstants.UNVERIFIED).first()
     
     user_data = Users(
         user_id=1,
         email='test@example.com',
         password_hash='hashed_password',
         name='Test User',
-        user_state_id=verified_state.user_state_id,
+        user_state_id=unverified_state.user_state_id,
         verification_token='old_token'
     )
     mock_db_session.add(user_data)
     
-    # Configure mocks to return None for get_user_state, generate a token, and verify the password
-    mock_get_user_state.return_value = None
+    # Configure mocks to generate a token, and verify the password
     mock_generate_token.return_value = 'new_token'
     mock_verify_password.return_value = True
     mock_send_email.return_value = True
@@ -220,11 +211,10 @@ def test_login_verified_state_not_found(mock_get_user_state, mock_generate_token
 @patch('use_cases.login_use_case.verify_password')
 @patch('use_cases.login_use_case.email_service.send_verification_email')
 @patch('use_cases.login_use_case.generate_verification_token')
-@patch('use_cases.login_use_case.get_user_state')
-def test_login_email_not_verified_send_fail(mock_get_user_state, mock_generate_token, mock_send_email_fails, mock_verify_password, mock_db_session):
+def test_login_email_not_verified_send_fail(mock_generate_token, mock_send_email_fails, mock_verify_password, mock_db_session):
     # Arrange
     # Get the "No Verificado" state from the mock database 
-    unverified_state = mock_db_session.query(UserStates).filter(lambda s: s.name == 'No Verificado').first()
+    unverified_state = mock_db_session.query(UserStates).filter(lambda s: s.name == UserStateConstants.UNVERIFIED).first()
     
     unverified_user_data = Users(
         user_id=1,
@@ -236,10 +226,7 @@ def test_login_email_not_verified_send_fail(mock_get_user_state, mock_generate_t
     )
     mock_db_session.add(unverified_user_data)
 
-    verified_state = mock_db_session.query(UserStates).filter(lambda s: s.name == "Verificado").first()
-    
-    # Configure mocks to return the verified state, generate a token, and verify the password
-    mock_get_user_state.return_value = verified_state 
+    # Configure mocks to generate a token, and verify the password
     mock_generate_token.return_value = 'new_token'
     mock_verify_password.return_value = True
     mock_send_email_fails.return_value = False
@@ -268,10 +255,9 @@ def test_login_email_not_verified_send_fail(mock_get_user_state, mock_generate_t
 
 @patch('use_cases.login_use_case.verify_password')
 @patch('use_cases.login_use_case.generate_verification_token')
-@patch('use_cases.login_use_case.get_user_state')
-def test_login_success_db_error_on_session(mock_get_user_state, mock_generate_token, mock_verify_password, mock_db_session):
+def test_login_success_db_error_on_session(mock_generate_token, mock_verify_password, mock_db_session):
     # Arrange
-    verified_state = mock_db_session.query(UserStates).filter(lambda s: s.name == 'Verificado').first()
+    verified_state = mock_db_session.query(UserStates).filter(lambda s: s.name == UserStateConstants.VERIFIED).first()
     
     user_data = Users(
         user_id=1,
@@ -283,7 +269,6 @@ def test_login_success_db_error_on_session(mock_get_user_state, mock_generate_to
     )
     mock_db_session.add(user_data)
 
-    mock_get_user_state.return_value = verified_state
     mock_generate_token.return_value = 'test_session_token'
     mock_verify_password.return_value = True
     

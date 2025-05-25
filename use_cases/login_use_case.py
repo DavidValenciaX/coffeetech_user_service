@@ -4,7 +4,7 @@ from utils.security import verify_password
 from domain.services.token_service import generate_verification_token
 from domain.services import email_service
 from utils.response import create_response
-from domain.user_repository import get_user_state
+from domain.user_state_repository import UserStateRepository, UserStateConstants
 import logging
 
 logger = logging.getLogger(__name__)
@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 class LoginUseCase:
     def __init__(self, db):
         self.db = db
+        self.user_state_repository = UserStateRepository(db)
 
     def _authenticate_user(self, request):
         """Authenticate user credentials."""
@@ -24,7 +25,7 @@ class LoginUseCase:
 
     def _check_user_verification_status(self, user):
         """Check if user is verified and return verification status."""
-        verified_user_state = get_user_state(self.db, "Verificado")
+        verified_user_state = self.user_state_repository.get_user_state_by_name(UserStateConstants.VERIFIED)
         
         if not verified_user_state or user.user_state_id != verified_user_state.user_state_id:
             return False
