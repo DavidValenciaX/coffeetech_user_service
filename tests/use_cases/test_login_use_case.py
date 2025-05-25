@@ -9,7 +9,7 @@ from fastapi import HTTPException
 import orjson
 from sqlalchemy.exc import OperationalError
 
-from use_cases.login_use_case import login
+from use_cases.login_use_case import LoginUseCase
 from tests.mockdb import MockDB, UserSessions, Users, UserDevices, UserStates
 
 @pytest.fixture
@@ -48,7 +48,8 @@ def test_login_success(mock_get_user_state, mock_generate_token, mock_verify_pas
     login_request.fcm_token = 'test_fcm_token'
 
     # Act
-    response_obj = login(login_request, mock_db_session)
+    use_case = LoginUseCase(mock_db_session)
+    response_obj = use_case.execute(login_request)
     response = orjson.loads(response_obj.body)
 
     # Assert
@@ -99,7 +100,8 @@ def test_login_incorrect_credentials(mock_verify_password, mock_db_session):
     login_request.password = 'wrong_password'
 
     # Act
-    response_obj = login(login_request, mock_db_session)
+    use_case = LoginUseCase(mock_db_session)
+    response_obj = use_case.execute(login_request)
     response = orjson.loads(response_obj.body)
 
     # Assert
@@ -115,7 +117,8 @@ def test_login_user_not_found(mock_db_session):
     login_request.password = 'password123'
 
     # Act
-    response_obj = login(login_request, mock_db_session)
+    use_case = LoginUseCase(mock_db_session)
+    response_obj = use_case.execute(login_request)
     response = orjson.loads(response_obj.body)
 
     # Assert
@@ -155,7 +158,8 @@ def test_login_email_not_verified(mock_get_user_state, mock_generate_token, mock
     login_request.password = 'password123'
 
     # Act
-    response_obj = login(login_request, mock_db_session)
+    use_case = LoginUseCase(mock_db_session)
+    response_obj = use_case.execute(login_request)
     response = orjson.loads(response_obj.body)
 
     # Assert
@@ -198,7 +202,8 @@ def test_login_verified_state_not_found(mock_get_user_state, mock_generate_token
     login_request.password = 'password123'
 
     # Act
-    response_obj = login(login_request, mock_db_session)
+    use_case = LoginUseCase(mock_db_session)
+    response_obj = use_case.execute(login_request)
     response = orjson.loads(response_obj.body)
 
     # Assert
@@ -243,8 +248,9 @@ def test_login_email_not_verified_send_fail(mock_get_user_state, mock_generate_t
     login_request.password = 'password123'
 
     # Act
+    use_case = LoginUseCase(mock_db_session)
     with pytest.raises(HTTPException) as exc_info:
-        login(login_request, mock_db_session)
+        use_case.execute(login_request)
     
     # Assert
     assert exc_info.value.status_code == 500
@@ -289,8 +295,9 @@ def test_login_success_db_error_on_session(mock_get_user_state, mock_generate_to
     login_request.fcm_token = 'test_fcm_token'
 
     # Act
+    use_case = LoginUseCase(mock_db_session)
     with pytest.raises(HTTPException) as exc_info:
-        login(login_request, mock_db_session)
+        use_case.execute(login_request)
     
     # Assert
     assert exc_info.value.status_code == 500

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from dataBase import get_db_session
-from use_cases.login_use_case import login
+from use_cases.login_use_case import LoginUseCase
 from use_cases.register_user_use_case import RegisterUserUseCase
 from use_cases.verify_email_use_case import verify_email
 from use_cases.forgot_password_use_case import forgot_password
@@ -113,7 +113,8 @@ def login_endpoint(request: LoginRequest, db: Session = Depends(get_db_session))
     If the email is not verified, resends the verification email.
     Returns an error for incorrect credentials or if email verification is required.
     """
-    return login(request, db)
+    use_case = LoginUseCase(db)
+    return use_case.execute(request)
 
 @router.put("/change-password")
 def change_password_endpoint(change: PasswordChange, session_token: str, db: Session = Depends(get_db_session)):

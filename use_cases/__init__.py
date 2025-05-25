@@ -6,7 +6,7 @@ Each use case handles a specific business operation and is independent of the
 presentation layer (endpoints).
 """
 
-from .login_use_case import login
+from .login_use_case import LoginUseCase
 from .list_roles_use_case import list_roles
 from .register_user_use_case import RegisterUserUseCase
 from .verify_email_use_case import verify_email
@@ -15,7 +15,7 @@ from .change_password_use_case import change_password
 from .delete_account_use_case import delete_account
 
 __all__ = [
-    "login",
+    "LoginUseCase",
     "list_roles",
     "RegisterUserUseCase",
     "verify_email",
