@@ -1,6 +1,6 @@
 from typing import Optional
-from sqlalchemy.orm import Session
-from models.models import Users
+from sqlalchemy.orm import Session, joinedload
+from models.models import Users, UserRole
 import logging
 
 logger = logging.getLogger(__name__)
@@ -21,7 +21,12 @@ class UserRepository:
         Returns:
             Usuario encontrado o None
         """
-        return self.db.query(Users).filter(Users.email == email).first()
+        return self.db.query(Users).options(
+            joinedload(Users.user_state),
+            joinedload(Users.roles).joinedload(UserRole.role),
+            joinedload(Users.sessions),
+            joinedload(Users.devices)
+        ).filter(Users.email == email).first()
     
     def find_by_id(self, user_id: int) -> Optional[Users]:
         """
@@ -33,7 +38,12 @@ class UserRepository:
         Returns:
             Usuario encontrado o None
         """
-        return self.db.query(Users).filter(Users.user_id == user_id).first()
+        return self.db.query(Users).options(
+            joinedload(Users.user_state),
+            joinedload(Users.roles).joinedload(UserRole.role),
+            joinedload(Users.sessions),
+            joinedload(Users.devices)
+        ).filter(Users.user_id == user_id).first()
     
     def find_by_verification_token(self, token: str) -> Optional[Users]:
         """
@@ -45,7 +55,12 @@ class UserRepository:
         Returns:
             Usuario encontrado o None
         """
-        return self.db.query(Users).filter(Users.verification_token == token).first()
+        return self.db.query(Users).options(
+            joinedload(Users.user_state),
+            joinedload(Users.roles).joinedload(UserRole.role),
+            joinedload(Users.sessions),
+            joinedload(Users.devices)
+        ).filter(Users.verification_token == token).first()
     
     def create(self, user_data: dict) -> Users:
         """
@@ -55,7 +70,7 @@ class UserRepository:
             user_data: Diccionario con los datos del usuario
             
         Returns:
-            Usuario creado
+            Usuario creado con todas las relaciones cargadas
             
         Raises:
             Exception: Si hay error al crear el usuario
@@ -66,8 +81,11 @@ class UserRepository:
             self.db.commit()
             self.db.refresh(new_user)
             
+            # Recargar el usuario con todas las relaciones
+            created_user = self.find_by_id(new_user.user_id)
+            
             logger.info(f"Usuario creado exitosamente: {user_data.get('email')}")
-            return new_user
+            return created_user
             
         except Exception as e:
             self.db.rollback()
@@ -83,7 +101,7 @@ class UserRepository:
             update_data: Diccionario con los datos a actualizar
             
         Returns:
-            Usuario actualizado
+            Usuario actualizado con todas las relaciones cargadas
             
         Raises:
             Exception: Si hay error al actualizar el usuario
@@ -96,8 +114,11 @@ class UserRepository:
             self.db.commit()
             self.db.refresh(user)
             
+            # Recargar el usuario con todas las relaciones
+            updated_user = self.find_by_id(user.user_id)
+            
             logger.info(f"Usuario actualizado exitosamente: {user.email}")
-            return user
+            return updated_user
             
         except Exception as e:
             self.db.rollback()

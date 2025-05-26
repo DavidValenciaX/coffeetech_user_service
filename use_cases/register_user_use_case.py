@@ -78,13 +78,13 @@ class RegisterUserUseCase:
         Maneja el caso cuando el usuario ya existe.
         
         Args:
-            existing_user: Usuario existente en la base de datos
+            existing_user: Entidad de usuario existente en la base de datos
             user_data: Nuevos datos del usuario
             
         Returns:
             Response object con el resultado de la operación
         """
-        if self.user_service.is_user_unverified(existing_user):
+        if existing_user.is_unverified():
             try:
                 # Actualizar usuario no verificado
                 updated_user = self.user_service.update_unverified_user(

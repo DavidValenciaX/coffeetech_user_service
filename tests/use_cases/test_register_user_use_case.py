@@ -9,6 +9,7 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from use_cases.register_user_use_case import RegisterUserUseCase
 from models.models import Users
+from domain.entities.user_entity import UserEntity
 
 
 class TestRegisterUserUseCase:
@@ -47,7 +48,7 @@ class TestRegisterUserUseCase:
         self.use_case.user_validator.validate_user_registration = Mock(return_value=None)
         self.use_case.user_service.find_user_by_email = Mock(return_value=None)
         
-        mock_user = Mock(spec=Users)
+        mock_user = Mock(spec=UserEntity)
         mock_user.verification_token = "token123"
         self.use_case.user_service.create_user = Mock(return_value=mock_user)
         self.use_case.notification_service.send_verification_email = Mock()
@@ -75,11 +76,11 @@ class TestRegisterUserUseCase:
         # Arrange
         self.use_case.user_validator.validate_user_registration = Mock(return_value=None)
         
-        mock_existing_user = Mock(spec=Users)
+        mock_existing_user = Mock(spec=UserEntity)
+        mock_existing_user.is_unverified.return_value = True
         self.use_case.user_service.find_user_by_email = Mock(return_value=mock_existing_user)
-        self.use_case.user_service.is_user_unverified = Mock(return_value=True)
         
-        mock_updated_user = Mock(spec=Users)
+        mock_updated_user = Mock(spec=UserEntity)
         mock_updated_user.verification_token = "new_token123"
         self.use_case.user_service.update_unverified_user = Mock(return_value=mock_updated_user)
         self.use_case.notification_service.send_verification_email = Mock()
@@ -107,9 +108,9 @@ class TestRegisterUserUseCase:
         # Arrange
         self.use_case.user_validator.validate_user_registration = Mock(return_value=None)
         
-        mock_existing_user = Mock(spec=Users)
+        mock_existing_user = Mock(spec=UserEntity)
+        mock_existing_user.is_unverified.return_value = False
         self.use_case.user_service.find_user_by_email = Mock(return_value=mock_existing_user)
-        self.use_case.user_service.is_user_unverified = Mock(return_value=False)
         
         mock_create_response.return_value = {"status": "error", "message": "El correo ya está registrado"}
         
