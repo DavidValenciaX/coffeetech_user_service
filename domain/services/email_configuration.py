@@ -1,6 +1,7 @@
+import sys
+import os
 from dataclasses import dataclass
 from typing import Optional
-import os
 from dotenv import load_dotenv
 import logging
 
@@ -27,13 +28,13 @@ class EmailConfiguration:
         smtp_user = os.getenv("SMTP_USER")
         smtp_pass = os.getenv("SMTP_PASS")
         
-        is_testing = "PYTEST_CURRENT_TEST" in os.environ
+        is_testing = "pytest" in sys.modules
 
         if not smtp_user or not smtp_pass:
             if is_testing:
                 logger.warning(
                     "SMTP_USER or SMTP_PASS environment variables not set. "
-                    "Using dummy values for testing environment as PYTEST_CURRENT_TEST is set."
+                    "Using dummy values for testing environment as 'pytest' is in sys.modules."
                 )
                 smtp_user = smtp_user or "dummy_smtp_user@example.com"
                 smtp_pass = smtp_pass or "dummy_smtp_password"
