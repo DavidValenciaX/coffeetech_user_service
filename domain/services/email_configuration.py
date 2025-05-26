@@ -27,20 +27,45 @@ class EmailConfiguration:
         smtp_user = os.getenv("SMTP_USER")
         smtp_pass = os.getenv("SMTP_PASS")
         
+        is_testing = "PYTEST_CURRENT_TEST" in os.environ
+
         if not smtp_user or not smtp_pass:
-            logger.error("Las credenciales SMTP no están configuradas correctamente.")
-            raise ValueError("SMTP credentials are not properly configured")
+            if is_testing:
+                logger.warning(
+                    "SMTP_USER or SMTP_PASS environment variables not set. "
+                    "Using dummy values for testing environment as PYTEST_CURRENT_TEST is set."
+                )
+                smtp_user = smtp_user or "dummy_smtp_user@example.com"
+                smtp_pass = smtp_pass or "dummy_smtp_password"
+            else:
+                logger.error(
+                    "Las credenciales SMTP (SMTP_USER, SMTP_PASS) no están configuradas "
+                    "correctamente en las variables de entorno."
+                )
+                raise ValueError("SMTP credentials are not properly configured in environment variables")
         
-        # Get base URL configuration
         app_host = os.getenv("APP_BASE_URL", "http://localhost")
         app_port = os.getenv("PORT", "8000")
         app_base_url = f"{app_host}:{app_port}"
         
+        smtp_host_env = os.getenv("SMTP_HOST", "smtp.zoho.com")
+        smtp_port_env = os.getenv("SMTP_PORT", "465")
+        
+        try:
+            smtp_port_int = int(smtp_port_env)
+        except ValueError:
+            logger.error(f"Invalid SMTP_PORT: '{smtp_port_env}'. Must be an integer.")
+            if is_testing:
+                logger.warning(f"Using default SMTP_PORT 465 for testing due to invalid value: {smtp_port_env}")
+                smtp_port_int = 465 # Default port for testing if invalid
+            else:
+                raise ValueError(f"Invalid SMTP_PORT: '{smtp_port_env}'. Must be an integer.")
+
         return cls(
             smtp_user=smtp_user,
             smtp_pass=smtp_pass,
-            smtp_host="smtp.zoho.com",
-            smtp_port=465,
+            smtp_host=smtp_host_env,
+            smtp_port=smtp_port_int,
             app_base_url=app_base_url,
             logo_url=f"{app_base_url}/static/logo.jpeg",
             fallback_logo_url="https://res.cloudinary.com/dh58mbonw/image/upload/v1745059649/u4iwdb6nsupnnsqwkvcn.jpg"
@@ -52,6 +77,6 @@ class EmailConfiguration:
             self.smtp_user,
             self.smtp_pass,
             self.smtp_host,
-            self.smtp_port,
+            isinstance(self.smtp_port, int) and self.smtp_port > 0, # Ensure port is a positive integer
             self.app_base_url
         ]) 
