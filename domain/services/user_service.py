@@ -2,7 +2,7 @@ from typing import Optional, Dict, Any
 from sqlalchemy.orm import Session
 from domain.repositories import UserRepository, UserStateRepository
 from domain.repositories.user_state_repository import UserStateConstants, UserStateNotFoundError
-from domain.entities.user import UserEntity
+from domain.entities.user import User
 from domain.entities.user_state import UserStateEntity
 from utils.security import hash_password
 from utils.verification_token import generate_verification_token
@@ -21,7 +21,7 @@ class UserService:
         self.user_repository = UserRepository(db)
         self.user_state_repository = UserStateRepository(db)
     
-    def create_user(self, name: str, email: str, password: str) -> UserEntity:
+    def create_user(self, name: str, email: str, password: str) -> User:
         """
         Crea un nuevo usuario con toda la lógica de negocio.
         
@@ -41,7 +41,7 @@ class UserService:
             # Verificar si el usuario ya existe
             existing_user_model = self.user_repository.find_by_email(email)
             if existing_user_model:
-                existing_user = UserEntity.from_model(existing_user_model)
+                existing_user = User.from_model(existing_user_model)
                 if existing_user.is_unverified():
                     # Actualizar usuario no verificado
                     return self.update_unverified_user(existing_user, name, password)
@@ -54,7 +54,7 @@ class UserService:
                 raise UserStateNotFoundError(f"No se encontró el estado '{UserStateConstants.UNVERIFIED}' para usuarios")
             
             # Crear entidad de usuario
-            user_entity = UserEntity(
+            user_entity = User(
                 name=name,
                 email=email,
                 password_hash=hash_password(password),
@@ -73,13 +73,13 @@ class UserService:
             
             # Crear en la base de datos y convertir a entidad
             created_user_model = self.user_repository.create(user_data)
-            return UserEntity.from_model(created_user_model)
+            return User.from_model(created_user_model)
             
         except Exception as e:
             logger.error(f"Error en servicio al crear usuario: {str(e)}")
             raise
     
-    def update_unverified_user(self, user_entity: UserEntity, name: str, password: str) -> UserEntity:
+    def update_unverified_user(self, user_entity: User, name: str, password: str) -> User:
         """
         Actualiza un usuario no verificado con nuevos datos.
         
@@ -117,13 +117,13 @@ class UserService:
             
             # Actualizar en la base de datos y convertir a entidad
             updated_user_model = self.user_repository.update(user_model, update_data)
-            return UserEntity.from_model(updated_user_model)
+            return User.from_model(updated_user_model)
             
         except Exception as e:
             logger.error(f"Error en servicio al actualizar usuario no verificado: {str(e)}")
             raise
     
-    def verify_user_email(self, user_entity: UserEntity) -> UserEntity:
+    def verify_user_email(self, user_entity: User) -> User:
         """
         Marca un usuario como verificado.
         
@@ -160,13 +160,13 @@ class UserService:
             updated_user_model = self.user_repository.update(user_model, update_data)
             logger.info(f"Usuario verificado exitosamente: {user_entity.email}")
             
-            return UserEntity.from_model(updated_user_model)
+            return User.from_model(updated_user_model)
             
         except Exception as e:
             logger.error(f"Error en servicio al verificar el correo para el usuario {user_entity.email}: {str(e)}")
             raise
     
-    def find_user_by_email(self, email: str) -> Optional[UserEntity]:
+    def find_user_by_email(self, email: str) -> Optional[User]:
         """
         Busca un usuario por email.
         
@@ -177,9 +177,9 @@ class UserService:
             Usuario encontrado como entidad o None
         """
         user_model = self.user_repository.find_by_email(email)
-        return UserEntity.from_model(user_model) if user_model else None
+        return User.from_model(user_model) if user_model else None
     
-    def find_user_by_id(self, user_id: int) -> Optional[UserEntity]:
+    def find_user_by_id(self, user_id: int) -> Optional[User]:
         """
         Busca un usuario por ID.
         
@@ -190,9 +190,9 @@ class UserService:
             Usuario encontrado como entidad o None
         """
         user_model = self.user_repository.find_by_id(user_id)
-        return UserEntity.from_model(user_model) if user_model else None
+        return User.from_model(user_model) if user_model else None
     
-    def find_user_by_verification_token(self, token: str) -> Optional[UserEntity]:
+    def find_user_by_verification_token(self, token: str) -> Optional[User]:
         """
         Busca un usuario por token de verificación.
         
@@ -203,7 +203,7 @@ class UserService:
             Usuario encontrado como entidad o None
         """
         user_model = self.user_repository.find_by_verification_token(token)
-        return UserEntity.from_model(user_model) if user_model else None
+        return User.from_model(user_model) if user_model else None
     
     def get_user_info(self, user_id: int) -> Optional[Dict[str, Any]]:
         """
@@ -228,7 +228,7 @@ class UserService:
         return None
     
     # Método de compatibilidad para casos donde aún se necesite el modelo
-    def _get_user_model_by_entity(self, user_entity: UserEntity) -> Optional[Users]:
+    def _get_user_model_by_entity(self, user_entity: User) -> Optional[Users]:
         """
         Obtiene el modelo SQLAlchemy a partir de una entidad.
         
@@ -242,7 +242,7 @@ class UserService:
             return None
         return self.user_repository.find_by_id(user_entity.user_id)
     
-    def delete_user(self, user_entity: UserEntity) -> None:
+    def delete_user(self, user_entity: User) -> None:
         """
         Elimina un usuario del sistema.
         

@@ -9,7 +9,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from domain.services.user_verification_service import UserVerificationService
 from domain.services.user_service import UserService
-from domain.entities.user import UserEntity
+from domain.entities.user import User
 from models.models import Users
 from tests.mockdb import MockDB
 
@@ -32,7 +32,7 @@ class TestUserVerificationService:
             user_state_id=1
         )
         
-        self.sample_user_entity = UserEntity(
+        self.sample_user_entity = User(
             user_id=1,
             name="Test User",
             email="test@example.com",
@@ -193,7 +193,7 @@ class TestUserVerificationService:
         """Test que maneja usuarios con atributos faltantes."""
         # Arrange
         email = "test@example.com"
-        incomplete_user = UserEntity(
+        incomplete_user = User(
             user_id=1,
             name="Test User",
             email="test@example.com"
@@ -305,7 +305,7 @@ class TestUserVerificationService:
         """Test que maneja emails con caracteres especiales."""
         # Arrange
         email = "test+special@example.com"
-        user_with_special_email = UserEntity(
+        user_with_special_email = User(
             user_id=3,
             name="Special User",
             email=email
@@ -382,7 +382,7 @@ class TestUserVerificationService:
         """Test que maneja emails con caracteres unicode."""
         # Arrange
         unicode_email = "tést@exámple.com"
-        user_with_unicode_email = UserEntity(
+        user_with_unicode_email = User(
             user_id=4,
             name="Unicode User",
             email=unicode_email
@@ -468,7 +468,7 @@ class TestUserVerificationService:
         """Test que maneja usuarios con atributos mínimos."""
         # Arrange
         email = "test@example.com"
-        user_with_minimal_attributes = UserEntity(
+        user_with_minimal_attributes = User(
             user_id=0,
             name="Minimal User",
             email=email

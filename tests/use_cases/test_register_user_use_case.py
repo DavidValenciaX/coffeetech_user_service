@@ -8,7 +8,7 @@ from unittest.mock import Mock, patch
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from use_cases.register_user_use_case import RegisterUserUseCase
-from domain.entities.user import UserEntity
+from domain.entities.user import User
 
 
 class TestRegisterUserUseCase:
@@ -47,7 +47,7 @@ class TestRegisterUserUseCase:
         self.use_case.user_validator.validate_user_registration = Mock(return_value=None)
         self.use_case.user_service.find_user_by_email = Mock(return_value=None)
         
-        mock_user = Mock(spec=UserEntity)
+        mock_user = Mock(spec=User)
         mock_user.verification_token = "token123"
         self.use_case.user_service.create_user = Mock(return_value=mock_user)
         self.use_case.notification_service.send_verification_email = Mock()
@@ -75,11 +75,11 @@ class TestRegisterUserUseCase:
         # Arrange
         self.use_case.user_validator.validate_user_registration = Mock(return_value=None)
         
-        mock_existing_user = Mock(spec=UserEntity)
+        mock_existing_user = Mock(spec=User)
         mock_existing_user.is_unverified.return_value = True
         self.use_case.user_service.find_user_by_email = Mock(return_value=mock_existing_user)
         
-        mock_updated_user = Mock(spec=UserEntity)
+        mock_updated_user = Mock(spec=User)
         mock_updated_user.verification_token = "new_token123"
         self.use_case.user_service.update_unverified_user = Mock(return_value=mock_updated_user)
         self.use_case.notification_service.send_verification_email = Mock()
@@ -107,7 +107,7 @@ class TestRegisterUserUseCase:
         # Arrange
         self.use_case.user_validator.validate_user_registration = Mock(return_value=None)
         
-        mock_existing_user = Mock(spec=UserEntity)
+        mock_existing_user = Mock(spec=User)
         mock_existing_user.is_unverified.return_value = False
         self.use_case.user_service.find_user_by_email = Mock(return_value=mock_existing_user)
         

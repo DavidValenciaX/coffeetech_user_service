@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from .user_device import UserDeviceEntity
 
 @dataclass
-class UserEntity:
+class User:
     """
     Representa un usuario en el dominio.
     
@@ -101,7 +101,7 @@ class UserEntity:
         return [d.fcm_token for d in self.devices if d.fcm_token]
     
     @classmethod
-    def from_model(cls, model) -> 'UserEntity':
+    def from_model(cls, model) -> 'User':
         """Crea una entidad desde un modelo de SQLAlchemy."""
         if not model:
             return None
