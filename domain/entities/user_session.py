@@ -5,7 +5,7 @@ from typing import Optional
 from dataclasses import dataclass
 
 @dataclass
-class UserSessionEntity:
+class UserSession:
     """
     Representa una sesión de usuario en el dominio.
     """
@@ -20,7 +20,7 @@ class UserSessionEntity:
         self.session_token = self.session_token.strip()
     
     @classmethod
-    def from_model(cls, model) -> 'UserSessionEntity':
+    def from_model(cls, model) -> 'UserSession':
         """Crea una entidad desde un modelo de SQLAlchemy."""
         if not model:
             return None

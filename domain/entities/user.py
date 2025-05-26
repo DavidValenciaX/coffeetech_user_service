@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 if TYPE_CHECKING:
     from .user_state import UserState
     from .user_role import UserRole
-    from .user_session import UserSessionEntity
+    from .user_session import UserSession
     from .user_device import UserDevice
 
 @dataclass
@@ -25,7 +25,7 @@ class User:
     verification_token: Optional[str] = None
     user_state: Optional['UserState'] = None
     roles: List['UserRole'] = field(default_factory=list)
-    sessions: List['UserSessionEntity'] = field(default_factory=list)
+    sessions: List['UserSession'] = field(default_factory=list)
     devices: List['UserDevice'] = field(default_factory=list)
     
     def __post_init__(self):
@@ -74,7 +74,7 @@ class User:
         """Remueve un rol del usuario."""
         self.roles = [ur for ur in self.roles if not (ur.role and ur.role.name == role_name)]
     
-    def add_session(self, session: 'UserSessionEntity') -> None:
+    def add_session(self, session: 'UserSession') -> None:
         """Agrega una sesión al usuario."""
         if session not in self.sessions:
             self.sessions.append(session)
@@ -92,7 +92,7 @@ class User:
         """Remueve un dispositivo del usuario."""
         self.devices = [d for d in self.devices if d.fcm_token != fcm_token]
     
-    def get_active_sessions(self) -> List['UserSessionEntity']:
+    def get_active_sessions(self) -> List['UserSession']:
         """Obtiene las sesiones activas del usuario."""
         return [s for s in self.sessions if s.is_active()]
     
@@ -109,7 +109,7 @@ class User:
         # Importaciones locales para evitar dependencias circulares
         from .user_state import UserState
         from .user_role import UserRole
-        from .user_session import UserSessionEntity
+        from .user_session import UserSession
         from .user_device import UserDevice
         
         user_state = UserState.from_model(model.user_state) if hasattr(model, 'user_state') and model.user_state else None
@@ -120,7 +120,7 @@ class User:
         
         sessions = []
         if hasattr(model, 'sessions') and model.sessions:
-            sessions = [UserSessionEntity.from_model(s) for s in model.sessions]
+            sessions = [UserSession.from_model(s) for s in model.sessions]
         
         devices = []
         if hasattr(model, 'devices') and model.devices:
