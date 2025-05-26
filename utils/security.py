@@ -33,4 +33,6 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
         return False
     except argon2.exceptions.InvalidHash:
         return False
+    except argon2.exceptions.VerificationError:
+        return False
 
