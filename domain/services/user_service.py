@@ -1,6 +1,5 @@
 from typing import Optional, Dict, Any
 from sqlalchemy.orm import Session
-from sqlalchemy.exc import SQLAlchemyError
 from domain.repositories import UserRepository, UserStateRepository
 from domain.repositories.user_state_repository import UserStateConstants, UserStateNotFoundError
 from domain.entities.user_entity import UserEntity
@@ -15,6 +14,8 @@ logger = logging.getLogger(__name__)
 class UserService:
     """Servicio de dominio para la gestión de usuarios."""
     
+    USER_NOT_FOUND_DB_ERROR = "Usuario no encontrado en la base de datos"
+
     def __init__(self, db: Session):
         self.db = db
         self.user_repository = UserRepository(db)
@@ -101,7 +102,7 @@ class UserService:
             # Obtener el modelo para actualizar
             user_model = self.user_repository.find_by_id(user_entity.user_id)
             if not user_model:
-                raise ValueError("Usuario no encontrado en la base de datos")
+                raise ValueError(self.USER_NOT_FOUND_DB_ERROR)
             
             # Actualizar la entidad
             user_entity.name = name
@@ -144,7 +145,7 @@ class UserService:
             # Obtener el modelo para actualizar
             user_model = self.user_repository.find_by_id(user_entity.user_id)
             if not user_model:
-                raise ValueError("Usuario no encontrado en la base de datos")
+                raise ValueError(self.USER_NOT_FOUND_DB_ERROR)
             
             # Actualizar la entidad
             user_entity.verification_token = None
@@ -259,7 +260,7 @@ class UserService:
             # Obtener el modelo para eliminar
             user_model = self.user_repository.find_by_id(user_entity.user_id)
             if not user_model:
-                raise ValueError("Usuario no encontrado en la base de datos")
+                raise ValueError(self.USER_NOT_FOUND_DB_ERROR)
             
             # Eliminar usando el repositorio
             self.user_repository.delete(user_model)
