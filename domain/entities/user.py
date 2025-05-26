@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 
 if TYPE_CHECKING:
     from .user_state import UserState
-    from .user_role import UserRoleEntity
+    from .user_role import UserRole
     from .user_session import UserSessionEntity
     from .user_device import UserDevice
 
@@ -24,7 +24,7 @@ class User:
     password_hash: str = ""
     verification_token: Optional[str] = None
     user_state: Optional['UserState'] = None
-    roles: List['UserRoleEntity'] = field(default_factory=list)
+    roles: List['UserRole'] = field(default_factory=list)
     sessions: List['UserSessionEntity'] = field(default_factory=list)
     devices: List['UserDevice'] = field(default_factory=list)
     
@@ -65,7 +65,7 @@ class User:
         """Verifica si el usuario es administrador."""
         return any(ur.role and ur.role.is_admin() for ur in self.roles)
     
-    def add_role(self, user_role: 'UserRoleEntity') -> None:
+    def add_role(self, user_role: 'UserRole') -> None:
         """Agrega un rol al usuario."""
         if user_role not in self.roles:
             self.roles.append(user_role)
@@ -108,7 +108,7 @@ class User:
         
         # Importaciones locales para evitar dependencias circulares
         from .user_state import UserState
-        from .user_role import UserRoleEntity
+        from .user_role import UserRole
         from .user_session import UserSessionEntity
         from .user_device import UserDevice
         
@@ -116,7 +116,7 @@ class User:
         
         roles = []
         if hasattr(model, 'roles') and model.roles:
-            roles = [UserRoleEntity.from_model(ur) for ur in model.roles]
+            roles = [UserRole.from_model(ur) for ur in model.roles]
         
         sessions = []
         if hasattr(model, 'sessions') and model.sessions:
