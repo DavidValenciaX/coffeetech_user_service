@@ -5,7 +5,7 @@ from typing import Optional
 from dataclasses import dataclass
 
 @dataclass
-class PermissionEntity:
+class Permission:
     """
     Representa un permiso en el dominio.
     
@@ -35,7 +35,7 @@ class PermissionEntity:
         return 'admin' in self.name.lower() or 'administrar' in self.name.lower()
     
     @classmethod
-    def from_model(cls, model) -> 'PermissionEntity':
+    def from_model(cls, model) -> 'Permission':
         """Crea una entidad desde un modelo de SQLAlchemy."""
         if not model:
             return None

@@ -5,7 +5,7 @@ from typing import Optional, List, TYPE_CHECKING
 from dataclasses import dataclass, field
 
 if TYPE_CHECKING:
-    from .permission import PermissionEntity
+    from .permission import Permission
 
 @dataclass
 class Role:
@@ -16,7 +16,7 @@ class Role:
     """
     role_id: Optional[int] = None
     name: str = ""
-    permissions: List['PermissionEntity'] = field(default_factory=list)
+    permissions: List['Permission'] = field(default_factory=list)
     
     def __post_init__(self):
         """Validaciones básicas después de la inicialización."""
@@ -24,12 +24,12 @@ class Role:
             raise ValueError("El nombre del rol no puede estar vacío")
         self.name = self.name.strip()
     
-    def add_permission(self, permission: 'PermissionEntity') -> None:
+    def add_permission(self, permission: 'Permission') -> None:
         """Agrega un permiso al rol."""
         if permission not in self.permissions:
             self.permissions.append(permission)
     
-    def remove_permission(self, permission: 'PermissionEntity') -> None:
+    def remove_permission(self, permission: 'Permission') -> None:
         """Remueve un permiso del rol."""
         if permission in self.permissions:
             self.permissions.remove(permission)
@@ -53,12 +53,12 @@ class Role:
             return None
         
         # Importación local para evitar dependencias circulares
-        from .permission import PermissionEntity
+        from .permission import Permission
         
         permissions = []
         if hasattr(model, 'permissions') and model.permissions:
             permissions = [
-                PermissionEntity.from_model(rp.permission) 
+                Permission.from_model(rp.permission) 
                 for rp in model.permissions 
                 if rp.permission
             ]
