@@ -239,4 +239,32 @@ class UserService:
         """
         if not user_entity or not user_entity.user_id:
             return None
-        return self.user_repository.find_by_id(user_entity.user_id) 
+        return self.user_repository.find_by_id(user_entity.user_id)
+    
+    def delete_user(self, user_entity: UserEntity) -> None:
+        """
+        Elimina un usuario del sistema.
+        
+        Args:
+            user_entity: Entidad de usuario a eliminar
+            
+        Raises:
+            ValueError: Si el usuario no existe
+            Exception: Si hay error al eliminar el usuario
+        """
+        try:
+            if not user_entity or not user_entity.user_id:
+                raise ValueError("Usuario inválido para eliminación")
+            
+            # Obtener el modelo para eliminar
+            user_model = self.user_repository.find_by_id(user_entity.user_id)
+            if not user_model:
+                raise ValueError("Usuario no encontrado en la base de datos")
+            
+            # Eliminar usando el repositorio
+            self.user_repository.delete(user_model)
+            logger.info(f"Usuario eliminado exitosamente desde el servicio: {user_entity.email}")
+            
+        except Exception as e:
+            logger.error(f"Error en servicio al eliminar usuario {user_entity.email}: {str(e)}")
+            raise 

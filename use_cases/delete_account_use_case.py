@@ -25,12 +25,10 @@ class DeleteAccountUseCase:
             return session_token_invalid_response()
         try:
             logger.debug(f"Eliminando cuenta para usuario ID: {user.user_id}, email: {user.email}")
-            # Delete the user record (this will cascade to related records)
-            self.db.delete(user)
-            self.db.commit()
+            # Delete the user record using the repository (this will handle cascade deletions)
+            self.user_repository.delete(user)
             logger.info(f"Cuenta eliminada exitosamente para usuario ID: {user.user_id}")
             return create_response("success", "Cuenta eliminada exitosamente")
         except Exception as e:
-            self.db.rollback()
             logger.error(f"Error eliminando cuenta para token {token_preview}...: {str(e)}")
             raise HTTPException(status_code=500, detail=f"Error eliminando cuenta: {str(e)}") 

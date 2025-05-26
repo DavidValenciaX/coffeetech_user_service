@@ -55,9 +55,10 @@ class UserRole:
         self.role_id = role_id
 
 class MockQuery:
-    def __init__(self, data):
+    def __init__(self, data, mock_db=None):
         self.data = data
         self._filters = []
+        self.mock_db = mock_db
 
     def filter(self, *args):
         for arg in args:
@@ -123,6 +124,25 @@ class MockQuery:
             if all(f(obj) for f in self._filters):
                 return obj
         return None
+
+    def delete(self):
+        """Bulk delete all objects matching the current filters"""
+        if self.mock_db is None:
+            # If we don't have a reference to the mock_db, just return 0
+            return 0
+        
+        # Find all objects matching the filters
+        objects_to_delete = []
+        for obj in self.data:
+            if all(f(obj) for f in self._filters):
+                objects_to_delete.append(obj)
+        
+        # Remove them from the appropriate collections
+        for obj in objects_to_delete:
+            self.mock_db.delete(obj)
+        
+        # Return the count of deleted objects
+        return len(objects_to_delete)
 
 class MockDB:
     def __init__(self):
@@ -210,21 +230,21 @@ class MockDB:
 
     def query(self, model):
         if model.__name__ == "Users":
-            return MockQuery(self.users)
+            return MockQuery(self.users, self)
         if model.__name__ == "UserStates":
-            return MockQuery(self.user_states)
+            return MockQuery(self.user_states, self)
         if model.__name__ == "UserSessions":
-            return MockQuery(self.user_sessions)
+            return MockQuery(self.user_sessions, self)
         if model.__name__ == "UserDevices":
-            return MockQuery(self.user_devices)
+            return MockQuery(self.user_devices, self)
         if model.__name__ == "Roles":
-            return MockQuery(self.roles)
+            return MockQuery(self.roles, self)
         if model.__name__ == "Permissions":
-            return MockQuery(self.permissions)
+            return MockQuery(self.permissions, self)
         if model.__name__ == "RolePermission":
-            return MockQuery(self.role_permissions)
+            return MockQuery(self.role_permissions, self)
         if model.__name__ == "UserRole":
-            return MockQuery(self.user_roles)
+            return MockQuery(self.user_roles, self)
         return MockQuery([])
 
     def add(self, obj):

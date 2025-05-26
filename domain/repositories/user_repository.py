@@ -1,6 +1,6 @@
 from typing import Optional
 from sqlalchemy.orm import Session, joinedload
-from models.models import Users, UserRole
+from models.models import Users, UserRole, UserSessions, UserDevices
 import logging
 
 logger = logging.getLogger(__name__)
@@ -128,6 +128,7 @@ class UserRepository:
     def delete(self, user: Users) -> None:
         """
         Elimina un usuario de la base de datos.
+        Maneja la eliminación en cascada de las relaciones.
         
         Args:
             user: Usuario a eliminar
@@ -136,9 +137,24 @@ class UserRepository:
             Exception: Si hay error al eliminar el usuario
         """
         try:
+            user_id = user.user_id
+            user_email = user.email
+            
+            # Eliminar manualmente las relaciones para evitar errores de CASCADE
+            # Eliminar sesiones de usuario
+            self.db.query(UserSessions).filter(UserSessions.user_id == user_id).delete()
+            
+            # Eliminar dispositivos de usuario 
+            self.db.query(UserDevices).filter(UserDevices.user_id == user_id).delete()
+            
+            # Eliminar roles de usuario
+            self.db.query(UserRole).filter(UserRole.user_id == user_id).delete()
+            
+            # Finalmente eliminar el usuario
             self.db.delete(user)
             self.db.commit()
-            logger.info(f"Usuario eliminado exitosamente: {user.email}")
+            
+            logger.info(f"Usuario eliminado exitosamente: {user_email}")
             
         except Exception as e:
             self.db.rollback()
