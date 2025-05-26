@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from .user_state import UserState
     from .user_role import UserRoleEntity
     from .user_session import UserSessionEntity
-    from .user_device import UserDeviceEntity
+    from .user_device import UserDevice
 
 @dataclass
 class User:
@@ -26,7 +26,7 @@ class User:
     user_state: Optional['UserState'] = None
     roles: List['UserRoleEntity'] = field(default_factory=list)
     sessions: List['UserSessionEntity'] = field(default_factory=list)
-    devices: List['UserDeviceEntity'] = field(default_factory=list)
+    devices: List['UserDevice'] = field(default_factory=list)
     
     def __post_init__(self):
         """Validaciones básicas después de la inicialización."""
@@ -83,7 +83,7 @@ class User:
         """Remueve una sesión del usuario."""
         self.sessions = [s for s in self.sessions if s.session_token != session_token]
     
-    def add_device(self, device: 'UserDeviceEntity') -> None:
+    def add_device(self, device: 'UserDevice') -> None:
         """Agrega un dispositivo al usuario."""
         if device not in self.devices:
             self.devices.append(device)
@@ -110,7 +110,7 @@ class User:
         from .user_state import UserState
         from .user_role import UserRoleEntity
         from .user_session import UserSessionEntity
-        from .user_device import UserDeviceEntity
+        from .user_device import UserDevice
         
         user_state = UserState.from_model(model.user_state) if hasattr(model, 'user_state') and model.user_state else None
         
@@ -124,7 +124,7 @@ class User:
         
         devices = []
         if hasattr(model, 'devices') and model.devices:
-            devices = [UserDeviceEntity.from_model(d) for d in model.devices]
+            devices = [UserDevice.from_model(d) for d in model.devices]
         
         return cls(
             user_id=model.user_id,

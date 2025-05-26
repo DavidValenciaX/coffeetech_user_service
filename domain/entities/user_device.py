@@ -5,7 +5,7 @@ from typing import Optional
 from dataclasses import dataclass
 
 @dataclass
-class UserDeviceEntity:
+class UserDevice:
     """
     Representa un dispositivo (token FCM) asociado a un usuario en el dominio.
     """
@@ -29,7 +29,7 @@ class UserDeviceEntity:
         return self.user_id == user_id
     
     @classmethod
-    def from_model(cls, model) -> 'UserDeviceEntity':
+    def from_model(cls, model) -> 'UserDevice':
         """Crea una entidad desde un modelo de SQLAlchemy."""
         if not model:
             return None
