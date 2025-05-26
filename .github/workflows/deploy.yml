@@ -23,6 +23,15 @@ jobs:
         mkdir -p ~/.ssh
         ssh-keyscan -H 173.212.224.226 >> ~/.ssh/known_hosts
 
+    - name: Run tests
+      run: pytest --cov --cov-branch --cov-report=xml
+
+    - name: Upload results to Codecov
+      uses: codecov/codecov-action@v5
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        slug: DavidValenciaX/user-service
+
     - name: Deploy with Docker Compose
       env:
         HOST: 173.212.224.226
