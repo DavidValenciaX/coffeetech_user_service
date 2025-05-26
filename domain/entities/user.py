@@ -5,10 +5,10 @@ from typing import Optional, List, TYPE_CHECKING
 from dataclasses import dataclass, field
 
 if TYPE_CHECKING:
-    from .user_state_entity import UserStateEntity
-    from .user_role_entity import UserRoleEntity
-    from .user_session_entity import UserSessionEntity
-    from .user_device_entity import UserDeviceEntity
+    from .user_state import UserStateEntity
+    from .user_role import UserRoleEntity
+    from .user_session import UserSessionEntity
+    from .user_device import UserDeviceEntity
 
 @dataclass
 class UserEntity:
@@ -107,10 +107,10 @@ class UserEntity:
             return None
         
         # Importaciones locales para evitar dependencias circulares
-        from .user_state_entity import UserStateEntity
-        from .user_role_entity import UserRoleEntity
-        from .user_session_entity import UserSessionEntity
-        from .user_device_entity import UserDeviceEntity
+        from .user_state import UserStateEntity
+        from .user_role import UserRoleEntity
+        from .user_session import UserSessionEntity
+        from .user_device import UserDeviceEntity
         
         user_state = UserStateEntity.from_model(model.user_state) if hasattr(model, 'user_state') and model.user_state else None
         

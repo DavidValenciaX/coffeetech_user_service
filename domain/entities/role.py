@@ -5,7 +5,7 @@ from typing import Optional, List, TYPE_CHECKING
 from dataclasses import dataclass, field
 
 if TYPE_CHECKING:
-    from .permission_entity import PermissionEntity
+    from .permission import PermissionEntity
 
 @dataclass
 class RoleEntity:
@@ -53,7 +53,7 @@ class RoleEntity:
             return None
         
         # Importación local para evitar dependencias circulares
-        from .permission_entity import PermissionEntity
+        from .permission import PermissionEntity
         
         permissions = []
         if hasattr(model, 'permissions') and model.permissions:

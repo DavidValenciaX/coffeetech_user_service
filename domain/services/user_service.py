@@ -2,8 +2,8 @@ from typing import Optional, Dict, Any
 from sqlalchemy.orm import Session
 from domain.repositories import UserRepository, UserStateRepository
 from domain.repositories.user_state_repository import UserStateConstants, UserStateNotFoundError
-from domain.entities.user_entity import UserEntity
-from domain.entities.user_state_entity import UserStateEntity
+from domain.entities.user import UserEntity
+from domain.entities.user_state import UserStateEntity
 from utils.security import hash_password
 from utils.verification_token import generate_verification_token
 from models.models import Users

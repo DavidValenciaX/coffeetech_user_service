@@ -5,7 +5,7 @@ from typing import Optional, TYPE_CHECKING
 from dataclasses import dataclass
 
 if TYPE_CHECKING:
-    from .role_entity import RoleEntity
+    from .role import RoleEntity
 
 @dataclass
 class UserRoleEntity:
@@ -41,7 +41,7 @@ class UserRoleEntity:
             return None
         
         # Importación local para evitar dependencias circulares en runtime
-        from .role_entity import RoleEntity
+        from .role import RoleEntity
         
         role = RoleEntity.from_model(model.role) if hasattr(model, 'role') and model.role else None
         

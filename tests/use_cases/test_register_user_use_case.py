@@ -8,8 +8,7 @@ from unittest.mock import Mock, patch
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from use_cases.register_user_use_case import RegisterUserUseCase
-from models.models import Users
-from domain.entities.user_entity import UserEntity
+from domain.entities.user import UserEntity
 
 
 class TestRegisterUserUseCase:

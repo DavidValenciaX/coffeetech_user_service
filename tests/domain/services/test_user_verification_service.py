@@ -9,7 +9,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from domain.services.user_verification_service import UserVerificationService
 from domain.services.user_service import UserService
-from domain.entities.user_entity import UserEntity
+from domain.entities.user import UserEntity
 from models.models import Users
 from tests.mockdb import MockDB
 
