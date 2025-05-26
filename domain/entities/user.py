@@ -5,7 +5,7 @@ from typing import Optional, List, TYPE_CHECKING
 from dataclasses import dataclass, field
 
 if TYPE_CHECKING:
-    from .user_state import UserStateEntity
+    from .user_state import UserState
     from .user_role import UserRoleEntity
     from .user_session import UserSessionEntity
     from .user_device import UserDeviceEntity
@@ -23,7 +23,7 @@ class User:
     email: str = ""
     password_hash: str = ""
     verification_token: Optional[str] = None
-    user_state: Optional['UserStateEntity'] = None
+    user_state: Optional['UserState'] = None
     roles: List['UserRoleEntity'] = field(default_factory=list)
     sessions: List['UserSessionEntity'] = field(default_factory=list)
     devices: List['UserDeviceEntity'] = field(default_factory=list)
@@ -107,12 +107,12 @@ class User:
             return None
         
         # Importaciones locales para evitar dependencias circulares
-        from .user_state import UserStateEntity
+        from .user_state import UserState
         from .user_role import UserRoleEntity
         from .user_session import UserSessionEntity
         from .user_device import UserDeviceEntity
         
-        user_state = UserStateEntity.from_model(model.user_state) if hasattr(model, 'user_state') and model.user_state else None
+        user_state = UserState.from_model(model.user_state) if hasattr(model, 'user_state') and model.user_state else None
         
         roles = []
         if hasattr(model, 'roles') and model.roles:

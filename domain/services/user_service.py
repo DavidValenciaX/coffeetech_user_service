@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from domain.repositories import UserRepository, UserStateRepository
 from domain.repositories.user_state_repository import UserStateConstants, UserStateNotFoundError
 from domain.entities.user import User
-from domain.entities.user_state import UserStateEntity
+from domain.entities.user_state import UserState
 from utils.security import hash_password
 from utils.verification_token import generate_verification_token
 from models.models import Users
@@ -59,7 +59,7 @@ class UserService:
                 email=email,
                 password_hash=hash_password(password),
                 verification_token=generate_verification_token(4),
-                user_state=UserStateEntity.from_model(user_registry_state)
+                user_state=UserState.from_model(user_registry_state)
             )
             
             # Preparar datos del usuario para persistencia
@@ -149,7 +149,7 @@ class UserService:
             
             # Actualizar la entidad
             user_entity.verification_token = None
-            user_entity.user_state = UserStateEntity.from_model(verified_state)
+            user_entity.user_state = UserState.from_model(verified_state)
             
             update_data = {
                 'verification_token': None,

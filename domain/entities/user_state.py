@@ -5,7 +5,7 @@ from typing import Optional
 from dataclasses import dataclass
 
 @dataclass
-class UserStateEntity:
+class UserState:
     """
     Representa un estado de usuario en el dominio.
     
@@ -33,7 +33,7 @@ class UserStateEntity:
         return self.name.lower() in ['suspendido', 'suspended', 'bloqueado', 'blocked']
     
     @classmethod
-    def from_model(cls, model) -> 'UserStateEntity':
+    def from_model(cls, model) -> 'UserState':
         """Crea una entidad desde un modelo de SQLAlchemy."""
         if not model:
             return None
