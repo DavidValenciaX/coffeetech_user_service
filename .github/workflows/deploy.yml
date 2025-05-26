@@ -20,13 +20,8 @@ jobs:
       with:
         python-version: '3.13' # Using Python 3.13 as indicated by your venv
 
-    - name: Install and set up uv
-      run: |
-        curl -LsSf https://astral.sh/uv/install.sh | sh
-        echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-
     - name: Install test dependencies
-      run: uv pip install pytest pytest-cov
+      run: pip install pytest pytest-cov
 
     - name: Run tests
       run: pytest --cov --cov-branch --cov-report=xml
