@@ -101,7 +101,7 @@ class ResetPasswordUseCase:
         Returns:
             bool: True si la contraseña es fuerte, False en caso contrario
         """
-        return UserValidator.validate_password_strength(password)
+        return UserValidator.validate_password_strength(password) is None
     
     def _is_token_valid(self, token: str) -> bool:
         """
