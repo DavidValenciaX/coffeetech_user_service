@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from .permission import PermissionEntity
 
 @dataclass
-class RoleEntity:
+class Role:
     """
     Representa un rol en el dominio.
     
@@ -47,7 +47,7 @@ class RoleEntity:
         return self.name.lower() in ['user', 'usuario', 'basic']
     
     @classmethod
-    def from_model(cls, model) -> 'RoleEntity':
+    def from_model(cls, model) -> 'Role':
         """Crea una entidad desde un modelo de SQLAlchemy."""
         if not model:
             return None

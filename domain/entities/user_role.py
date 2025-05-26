@@ -5,7 +5,7 @@ from typing import Optional, TYPE_CHECKING
 from dataclasses import dataclass
 
 if TYPE_CHECKING:
-    from .role import RoleEntity
+    from .role import Role
 
 @dataclass
 class UserRoleEntity:
@@ -15,7 +15,7 @@ class UserRoleEntity:
     user_role_id: Optional[int] = None
     user_id: Optional[int] = None
     role_id: Optional[int] = None
-    role: Optional['RoleEntity'] = None
+    role: Optional['Role'] = None
     
     def __post_init__(self):
         """Validaciones básicas después de la inicialización."""
@@ -41,9 +41,9 @@ class UserRoleEntity:
             return None
         
         # Importación local para evitar dependencias circulares en runtime
-        from .role import RoleEntity
+        from .role import Role
         
-        role = RoleEntity.from_model(model.role) if hasattr(model, 'role') and model.role else None
+        role = Role.from_model(model.role) if hasattr(model, 'role') and model.role else None
         
         return cls(
             user_role_id=model.user_role_id,
