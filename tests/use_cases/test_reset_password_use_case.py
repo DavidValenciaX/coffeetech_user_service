@@ -86,7 +86,7 @@ class TestResetPasswordUseCase:
         # Arrange
         new_password_hash = "new_hashed_password"
         mock_hash_password.return_value = new_password_hash
-        mock_validator.validate_password_strength.return_value = True
+        mock_validator.validate_password_strength.return_value = None
         mock_token_service.is_token_valid.return_value = True
         
         mock_repo_instance = mock_user_repository.return_value
@@ -169,7 +169,7 @@ class TestResetPasswordUseCase:
                                   mock_user_repository, mock_db, invalid_token_reset):
         """Test password reset with invalid token."""
         # Arrange
-        mock_validator.validate_password_strength.return_value = True
+        mock_validator.validate_password_strength.return_value = None
         mock_token_service.is_token_valid.return_value = False
         
         use_case = ResetPasswordUseCase(mock_db)
@@ -194,7 +194,7 @@ class TestResetPasswordUseCase:
                                    mock_user_repository, mock_db, valid_password_reset):
         """Test password reset when user is not found."""
         # Arrange
-        mock_validator.validate_password_strength.return_value = True
+        mock_validator.validate_password_strength.return_value = None
         mock_token_service.is_token_valid.return_value = True
         
         mock_repo_instance = mock_user_repository.return_value
@@ -224,7 +224,7 @@ class TestResetPasswordUseCase:
                                    mock_user_repository, mock_db, mock_user, valid_password_reset):
         """Test password reset when database commit fails."""
         # Arrange
-        mock_validator.validate_password_strength.return_value = True
+        mock_validator.validate_password_strength.return_value = None
         mock_token_service.is_token_valid.return_value = True
         mock_hash_password.return_value = "new_hashed_password"
         
@@ -253,7 +253,7 @@ class TestResetPasswordUseCase:
                                         mock_user_repository, mock_db, mock_user, valid_password_reset):
         """Test password reset when token service fails."""
         # Arrange
-        mock_validator.validate_password_strength.return_value = True
+        mock_validator.validate_password_strength.return_value = None
         mock_token_service.is_token_valid.return_value = True
         mock_hash_password.return_value = "new_hashed_password"
         
@@ -289,7 +289,7 @@ class TestResetPasswordUseCase:
     def test_is_password_strong_private_method(self, mock_validator, mock_db):
         """Test the private _is_password_strong method."""
         # Arrange
-        mock_validator.validate_password_strength.return_value = True
+        mock_validator.validate_password_strength.return_value = None
         use_case = ResetPasswordUseCase(mock_db)
         
         # Act
@@ -383,7 +383,8 @@ class TestResetPasswordUseCase:
             new_password="",
             confirm_password=""
         )
-        
+        mock_validator.validate_password_strength.return_value = "La nueva contraseña debe tener al menos 8 caracteres, incluir una letra mayúscula, una letra minúscula, un número y un carácter especial"
+
         use_case = ResetPasswordUseCase(mock_db)
         
         # Act
@@ -391,7 +392,8 @@ class TestResetPasswordUseCase:
         
         # Assert
         content = self._extract_response_content(result)
-        assert content["status"] == "success"  # Empty passwords match
+        assert content["status"] == "error"
+        assert "La nueva contraseña debe tener al menos 8 caracteres" in content["message"]
         
         # But password strength validation should fail
         mock_validator.validate_password_strength.assert_called_once_with("")
@@ -430,7 +432,7 @@ class TestResetPasswordUseCase:
                                      mock_user, valid_password_reset):
         """Test that appropriate logging occurs for successful password reset."""
         # Arrange
-        mock_validator.validate_password_strength.return_value = True
+        mock_validator.validate_password_strength.return_value = None
         mock_token_service.is_token_valid.return_value = True
         mock_hash_password.return_value = "new_hashed_password"
         
@@ -478,7 +480,7 @@ class TestResetPasswordUseCase:
             confirm_password="P@ssw0rd!#$%^&*()"
         )
         
-        mock_validator.validate_password_strength.return_value = True
+        mock_validator.validate_password_strength.return_value = None
         mock_token_service.is_token_valid.return_value = True
         mock_hash_password.return_value = "new_hashed_password"
         
@@ -513,7 +515,7 @@ class TestResetPasswordUseCase:
             confirm_password="Contraseña123!ñáéíóú"
         )
         
-        mock_validator.validate_password_strength.return_value = True
+        mock_validator.validate_password_strength.return_value = None
         mock_token_service.is_token_valid.return_value = True
         mock_hash_password.return_value = "new_hashed_password"
         
