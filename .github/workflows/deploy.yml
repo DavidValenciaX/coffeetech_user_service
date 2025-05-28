@@ -32,7 +32,7 @@ jobs:
       uses: codecov/codecov-action@v5
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
-        slug: DavidValenciaX/user-service
+        slug: DavidValenciaX/coffeetech_user_service
 
     - name: Set up SSH
       uses: webfactory/ssh-agent@v0.7.0
